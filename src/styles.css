@@ -20,6 +20,10 @@ body,
   margin: 0;
   overflow: hidden;
   background: #050507;
+  overscroll-behavior: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 button,
@@ -41,6 +45,8 @@ input {
   padding: 0 12px;
   color: #fff;
   background: rgba(255, 255, 255, 0.08);
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .phoneLayout {
@@ -58,6 +64,9 @@ input {
   min-height: 0;
   overflow: hidden;
   touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   border-radius: 18px;
   background:
     radial-gradient(circle at 50% 20%, rgba(66, 133, 244, 0.18), transparent 40%),
@@ -71,6 +80,8 @@ input {
   object-fit: contain;
   display: block;
   will-change: transform;
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
 
 .videoStageStatus,
@@ -114,6 +125,190 @@ input {
   color: rgba(255, 255, 255, 0.88);
   background: rgba(0, 0, 0, 0.68);
   font-size: 11px;
+}
+
+.videoStateTokens {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 4;
+  display: flex;
+  gap: 7px;
+}
+
+.videoStateToken {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  min-height: 34px;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.videoStateToken.scroll {
+  color: #06120a;
+  background: #34c759;
+}
+
+.videoStateToken.leftHold {
+  color: #08111f;
+  background: #64d2ff;
+}
+
+.actionWheel {
+  position: fixed;
+  z-index: 20;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.actionWheelGuide {
+  position: absolute;
+  left: -105px;
+  top: -105px;
+  width: 210px;
+  height: 210px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, transparent 0 46px, rgba(255, 255, 255, 0.08) 47px, rgba(255, 255, 255, 0.02) 86px, transparent 106px),
+    conic-gradient(
+      from -45deg,
+      rgba(52, 199, 89, 0.16) 0deg 90deg,
+      rgba(100, 210, 255, 0.14) 90deg 180deg,
+      rgba(255, 214, 10, 0.13) 180deg 270deg,
+      rgba(255, 69, 58, 0.14) 270deg 360deg
+    );
+  opacity: 0.95;
+  backdrop-filter: blur(5px);
+  -webkit-mask: radial-gradient(circle, transparent 0 46px, #000 47px 105px);
+  mask: radial-gradient(circle, transparent 0 46px, #000 47px 105px);
+}
+
+.actionWheel.selected-scroll .actionWheelGuide {
+  background:
+    radial-gradient(circle, transparent 0 46px, rgba(52, 199, 89, 0.22) 47px, rgba(52, 199, 89, 0.05) 100px, transparent 106px),
+    conic-gradient(
+      from -45deg,
+      rgba(52, 199, 89, 0.36) 0deg 90deg,
+      rgba(100, 210, 255, 0.14) 90deg 180deg,
+      rgba(255, 214, 10, 0.13) 180deg 270deg,
+      rgba(255, 69, 58, 0.14) 270deg 360deg
+    );
+}
+
+.actionWheel.selected-rightClick .actionWheelGuide {
+  background:
+    radial-gradient(circle, transparent 0 46px, rgba(255, 69, 58, 0.22) 47px, rgba(255, 69, 58, 0.05) 100px, transparent 106px),
+    conic-gradient(
+      from -45deg,
+      rgba(52, 199, 89, 0.16) 0deg 90deg,
+      rgba(100, 210, 255, 0.14) 90deg 180deg,
+      rgba(255, 214, 10, 0.13) 180deg 270deg,
+      rgba(255, 69, 58, 0.38) 270deg 360deg
+    );
+}
+
+.actionWheel.selected-rescue .actionWheelGuide {
+  background:
+    radial-gradient(circle, transparent 0 46px, rgba(255, 214, 10, 0.22) 47px, rgba(255, 214, 10, 0.05) 100px, transparent 106px),
+    conic-gradient(
+      from -45deg,
+      rgba(52, 199, 89, 0.16) 0deg 90deg,
+      rgba(100, 210, 255, 0.14) 90deg 180deg,
+      rgba(255, 214, 10, 0.38) 180deg 270deg,
+      rgba(255, 69, 58, 0.14) 270deg 360deg
+    );
+}
+
+.actionWheel.selected-leftHold .actionWheelGuide {
+  background:
+    radial-gradient(circle, transparent 0 46px, rgba(100, 210, 255, 0.22) 47px, rgba(100, 210, 255, 0.05) 100px, transparent 106px),
+    conic-gradient(
+      from -45deg,
+      rgba(52, 199, 89, 0.16) 0deg 90deg,
+      rgba(100, 210, 255, 0.38) 90deg 180deg,
+      rgba(255, 214, 10, 0.13) 180deg 270deg,
+      rgba(255, 69, 58, 0.14) 270deg 360deg
+    );
+}
+
+.actionWheelLine {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.28);
+  transform: translate(-50%, -50%);
+}
+
+.actionWheelLine.vertical {
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 210px;
+}
+
+.actionWheelLine.horizontal {
+  left: 0;
+  top: 0;
+  width: 210px;
+  height: 1px;
+}
+
+.actionWheelCenter {
+  position: absolute;
+  left: -46px;
+  top: -46px;
+  width: 92px;
+  height: 92px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  background: rgba(6, 6, 8, 0.62);
+  box-shadow: inset 0 0 24px rgba(255, 255, 255, 0.08);
+}
+
+.actionWheelItem {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(28, 28, 30, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.45);
+  transform: translate(-50%, -50%);
+  backdrop-filter: blur(16px);
+}
+
+.actionWheelItem.selected {
+  color: #06120a;
+  background: #34c759;
+}
+
+.actionWheelItem.armed {
+  color: #08111f;
+  background: #64d2ff;
+}
+
+.actionWheelItem.top {
+  left: 0;
+  top: -76px;
+}
+
+.actionWheelItem.right {
+  left: 76px;
+  top: 0;
+}
+
+.actionWheelItem.left {
+  left: -76px;
+  top: 0;
+}
+
+.actionWheelItem.bottom {
+  left: 0;
+  top: 76px;
 }
 
 .controlDeck {

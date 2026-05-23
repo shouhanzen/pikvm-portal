@@ -132,6 +132,27 @@ export function ControlShell({ onLoggedOut }: { onLoggedOut: () => void }) {
           logError("mouse", error);
         }
       },
+      sendMouseWheel: async (x, y) => {
+        try {
+          await socketRef.current?.sendMouseWheel(x, y);
+        } catch (error) {
+          logError("mouse-wheel", error);
+        }
+      },
+      moveMouseAbsolute: async (x, y) => {
+        try {
+          await socketRef.current?.moveMouseAbsolute(x, y);
+        } catch (error) {
+          logError("mouse-rescue", error);
+        }
+      },
+      setMouseButton: async (button, state) => {
+        try {
+          await socketRef.current?.setMouseButton(button, state);
+        } catch (error) {
+          logError("mouse-button", error);
+        }
+      },
       clickMouse: async (button = "left") => {
         try {
           await socketRef.current?.clickMouse(button);

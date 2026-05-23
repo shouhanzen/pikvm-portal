@@ -8,6 +8,9 @@ export type KvmInput = {
   sendShortcut: (keys: string[]) => Promise<void>;
   sendText: (text: string) => Promise<void>;
   sendMouseRelative: (x: number, y: number) => Promise<void>;
+  sendMouseWheel: (x: number, y: number) => Promise<void>;
+  moveMouseAbsolute: (x: number, y: number) => Promise<void>;
+  setMouseButton: (button: "left" | "right", state: boolean) => Promise<void>;
   clickMouse: (button?: "left" | "right") => Promise<void>;
   sendTerminalAction: (action: TerminalAction) => Promise<void>;
 };

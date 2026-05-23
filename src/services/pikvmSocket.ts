@@ -91,10 +91,30 @@ export class PiKvmSocket {
     this.send({ event_type: "mouse_relative", event: { delta: [{ x: deltaX, y: deltaY }], squash: true } });
   }
 
+  async sendMouseWheel(x: number, y: number) {
+    const deltaX = Math.trunc(x);
+    const deltaY = Math.trunc(y);
+    if (!deltaX && !deltaY) {
+      return;
+    }
+    this.send({ event_type: "mouse_wheel", event: { delta: { x: deltaX, y: deltaY } } });
+  }
+
+  async moveMouseAbsolute(x: number, y: number) {
+    this.send({
+      event_type: "mouse_move",
+      event: { to: { x: Math.trunc(x), y: Math.trunc(y) } },
+    });
+  }
+
+  async setMouseButton(button: "left" | "right", state: boolean) {
+    this.send({ event_type: "mouse_button", event: { button, state } });
+  }
+
   async clickMouse(button: "left" | "right" = "left") {
-    this.send({ event_type: "mouse_button", event: { button, state: true } });
+    await this.setMouseButton(button, true);
     await wait(35);
-    this.send({ event_type: "mouse_button", event: { button, state: false } });
+    await this.setMouseButton(button, false);
   }
 }
 

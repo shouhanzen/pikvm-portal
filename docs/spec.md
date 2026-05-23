@@ -289,39 +289,34 @@ Primary video-area gestures in Mouse mode:
 
 - Drag moves the mouse pointer relatively, like a trackpad.
 - Single tap sends a left click at the current pointer position.
-- Long press opens an action wheel.
+- Long press opens a radial action wheel centered on the hold point.
+- Action wheel layout: top toggles sticky scroll mode, right sends right-click at the current cursor, left rescues the mouse to the hold location, bottom toggles sticky left mouse hold.
+- Action wheel selection uses hold-slide-release with a 48px activation radius and a 500ms long-hold delay.
+- Scroll mode is sticky until toggled off from the top-left video icon token or the action wheel. In scroll mode, taps do nothing and vertical swipes send native touch-direction mouse wheel events.
+- Scroll mode sends one wheel tick per 20px of finger travel and applies medium decaying momentum after flicks.
 
 Left mouse hold keeps the left button pressed until toggled off. While left mouse hold is active, normal drag still moves the pointer relatively, but the PiKVM left mouse button remains held down. Tapping the video should not implicitly release hold.
 
-The video area should show a persistent chip such as `Left hold on` while left mouse hold is active. This is more reliable than trying to indicate pointer location, because the app controls the mouse relatively and may not know the exact on-screen cursor position.
+The video area should show persistent icon-only state tokens while scroll mode or left mouse hold is active. This is more reliable than trying to indicate pointer location, because the app controls the mouse relatively and may not know the exact on-screen cursor position.
 
 ### Action Wheel
 
 The action wheel should use a hybrid crosshair-style layout:
 
-- A radial/crosshair action area appears around the long-press origin.
+- A radial/crosshair action area appears around the long-press origin with icons, quadrant dividers, and a subtle gradient tint that starts at the neutral circle and fades outward.
 - The center/neutral radius is the only cancel area.
 - Outside the neutral radius, action zones cover the full 360 degrees.
 - Each outer action zone is defined by an angle range and extends indefinitely beyond the cutoff radius.
 - Releasing outside the neutral radius triggers the action for the current angle zone.
 - Discrete action zones activate on slide-and-release.
-- Scroll zones act continuously while the thumb remains down.
-- Active regions should highlight as the thumb moves through them.
+- Active regions should highlight more strongly as the thumb moves through them.
 
 Initial angle mapping:
 
-- Up: scroll up.
-- Down: scroll down.
+- Up: toggle sticky scroll mode.
+- Down: toggle sticky left mouse hold.
 - Right: right click.
-- Left: toggle left mouse hold on/off.
-
-Scroll actions in the wheel are continuous:
-
-- Moving the thumb up or down by every configured threshold sends one mouse wheel event.
-- Scrolling accumulates as the thumb continues moving through additional thresholds.
-- The end of the scroll range acts as a repeat zone.
-- While the thumb remains in a repeat zone, the app repeatedly sends scroll events at a controlled interval.
-- Leaving the repeat zone stops the repeat.
+- Left: rescue mouse to the hold location.
 
 ## Design Language
 
@@ -400,6 +395,8 @@ Included:
   - One-finger tap sends left click at the current remote cursor position.
   - One-finger drag sends relative mouse movement with direct pixel mapping.
   - Relative mouse movement maps thumb movement in screen space to cursor movement in screen space by dividing HID deltas by the fitted video source-to-screen scale and current view zoom.
+  - Long-hold radial wheel supports sticky scroll mode, right-click at current cursor, and rescue mouse to hold location.
+  - Rescue mouse is the only Draft 1 action that sends absolute mouse coordinates.
   - Two-finger gestures are view-only: pinch adjusts persisted `viewState.scale`, two-finger pan adjusts persisted `viewState.sourceAnchor`, and no HID mouse events are sent during the view gesture.
   - Pinch zoom is anchored under the gesture midpoint by updating both scale and source anchor during the same gesture.
   - WebRTC is torn down on app background/page hide and restarted on foreground/page show/focus to avoid stale iOS PWA media sessions.
@@ -456,7 +453,6 @@ Included:
 
 Excluded from Draft 1:
 
-- Action wheel.
 - Left mouse hold behavior.
 - View presets.
 - Dedicated offline/service worker update flow beyond whatever minimal PWA shell is needed later.
