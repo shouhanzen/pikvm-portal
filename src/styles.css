@@ -1,0 +1,605 @@
+:root {
+  color: #f7f7f8;
+  background: #050507;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #050507;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  color: inherit;
+  touch-action: manipulation;
+}
+
+input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  padding: 0 12px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.phoneLayout {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100dvh;
+  padding: max(env(safe-area-inset-top), 6px) 6px calc(max(env(safe-area-inset-bottom), 4px) + 31px);
+  overflow: hidden;
+  background: #050507;
+}
+
+.videoStage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(66, 133, 244, 0.18), transparent 40%),
+    #000;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.videoStage video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  will-change: transform;
+}
+
+.videoStageStatus,
+.centeredState,
+.orientationGate,
+.authShell {
+  display: grid;
+  place-items: center;
+}
+
+.videoStageStatus {
+  position: absolute;
+  inset: 0;
+  gap: 8px;
+  align-content: center;
+  padding: 24px;
+  color: rgba(255, 255, 255, 0.84);
+  text-align: center;
+  background: rgba(0, 0, 0, 0.52);
+}
+
+.videoStageStatus span,
+.centeredState p,
+.orientationGate p,
+.authCard p,
+.settingsStack small,
+.settingsRow small,
+.emptySettingsTab p,
+.dangerZone p {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.debugVideoOverlay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(0, 0, 0, 0.68);
+  font-size: 11px;
+}
+
+.controlDeck {
+  display: grid;
+  gap: 6px;
+  padding-top: 6px;
+}
+
+.controlBar,
+.bottomUtilityRow {
+  display: grid;
+  gap: 6px;
+}
+
+.controlBar {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.bottomUtilityRow {
+  grid-template-columns: repeat(9, 1fr);
+  padding: 0 2px;
+}
+
+.iconButton,
+.keyboardKey {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 42px;
+  border-radius: 11px;
+  color: #111;
+  background: linear-gradient(#f9f9f9, #d9d9dc);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.34) inset, 0 1px 2px rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+
+.iconButton {
+  min-height: 38px;
+  border-radius: 13px;
+  color: #f5f5f7;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.iconButton.active,
+.keyboardKey.active,
+.keyboardKey.pressed {
+  color: #fff;
+  background: #4b8dff;
+}
+
+.iconButton.cmdActive {
+  color: #06120a;
+  background: #34c759;
+}
+
+.keyboardToggleIcon {
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.customKeyboard {
+  display: grid;
+  gap: 6px;
+  padding: 0 2px;
+  touch-action: none;
+}
+
+.keyboardRow {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.keyboardRow.row-1 {
+  padding: 0 16px;
+}
+
+.keyboardRow.keyboardLayer-alpha.row-2 {
+  grid-template-columns: 1.45fr repeat(7, minmax(0, 1fr)) 1.45fr;
+  gap: 8px;
+}
+
+.keyboardRow.keyboardLayer-numbers.row-2,
+.keyboardRow.keyboardLayer-symbols.row-2 {
+  grid-template-columns: 1fr 0.24fr repeat(5, minmax(0, 1fr)) 0.24fr 1fr;
+  gap: 6px;
+}
+
+.keyboardRow.keyboardLayer-numbers.row-2 .keyboardKey:nth-child(1),
+.keyboardRow.keyboardLayer-symbols.row-2 .keyboardKey:nth-child(1) {
+  grid-column: 1;
+}
+
+.keyboardRow.keyboardLayer-numbers.row-2 .keyboardKey:nth-child(2),
+.keyboardRow.keyboardLayer-symbols.row-2 .keyboardKey:nth-child(2) {
+  grid-column: 3;
+}
+
+.keyboardRow.keyboardLayer-numbers.row-2 .keyboardKey:nth-child(3),
+.keyboardRow.keyboardLayer-symbols.row-2 .keyboardKey:nth-child(3) {
+  grid-column: 4;
+}
+
+.keyboardRow.keyboardLayer-numbers.row-2 .keyboardKey:nth-child(4),
+.keyboardRow.keyboardLayer-symbols.row-2 .keyboardKey:nth-child(4) {
+  grid-column: 5;
+}
+
+.keyboardRow.keyboardLayer-numbers.row-2 .keyboardKey:nth-child(5),
+.keyboardRow.keyboardLayer-symbols.row-2 .keyboardKey:nth-child(5) {
+  grid-column: 6;
+}
+
+.keyboardRow.keyboardLayer-numbers.row-2 .keyboardKey:nth-child(6),
+.keyboardRow.keyboardLayer-symbols.row-2 .keyboardKey:nth-child(6) {
+  grid-column: 7;
+}
+
+.keyboardRow.keyboardLayer-numbers.row-2 .keyboardKey:nth-child(7),
+.keyboardRow.keyboardLayer-symbols.row-2 .keyboardKey:nth-child(7) {
+  grid-column: 9;
+}
+
+.keyboardKey {
+  min-height: clamp(38px, 6vh, 46px);
+  font-size: clamp(18px, 5.4vw, 22px);
+  line-height: 1;
+}
+
+.keyboardKey.wide-shift,
+.keyboardKey.wide-backspace,
+.keyboardKey.wide-utility,
+.keyboardKey.wide-enter {
+  font-size: 14px;
+  background: linear-gradient(#b8bcc4, #969aa4);
+}
+
+.keyboardKey.wide-space,
+.voiceSpacebar {
+  grid-column: span 5;
+  font-size: 16px;
+  color: #202124;
+}
+
+.keyboardKey.wide-enter {
+  grid-column: span 2;
+}
+
+.keyboardKey.wide-utility {
+  grid-column: span 2;
+}
+
+.voiceSpacebar {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  gap: 6px;
+  touch-action: none;
+}
+
+.voiceSpacebar.recording {
+  color: #fff;
+  background: linear-gradient(135deg, #ff3b30, #ff6b57);
+}
+
+.voiceSpacebar.locked {
+  background: linear-gradient(135deg, #ff2d55, #ff6b57);
+}
+
+.voiceIcon,
+.stopBubble {
+  display: grid;
+  place-items: center;
+}
+
+.voiceWave {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 18px;
+}
+
+.voiceWave i {
+  width: 3px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: voiceWave 0.78s ease-in-out infinite;
+}
+
+.voiceWave i:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.voiceWave i:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.voiceWave i:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+@keyframes voiceWave {
+  0%,
+  100% {
+    height: 6px;
+  }
+  50% {
+    height: 18px;
+  }
+}
+
+.keyPopup,
+.pressPopup {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  z-index: 3;
+  min-width: 42px;
+  padding: 9px 12px;
+  border-radius: 14px;
+  color: #111;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.pressPopup {
+  min-width: auto;
+  color: #fff;
+  background: rgba(20, 20, 22, 0.94);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.centeredState,
+.orientationGate,
+.authShell {
+  width: 100%;
+  height: 100dvh;
+  padding: 24px;
+  text-align: center;
+  background: radial-gradient(circle at top, rgba(67, 133, 244, 0.22), transparent 44%), #050507;
+}
+
+.centeredState h1,
+.orientationGate h1,
+.authCard h1,
+.settingsHeader h2 {
+  margin: 0;
+}
+
+.centeredState button,
+.authForm button,
+.settingsBody button,
+.smallModal button {
+  min-height: 44px;
+  border-radius: 14px;
+  padding: 0 14px;
+  color: #fff;
+  background: #0a84ff;
+}
+
+.centeredState button:disabled,
+.authForm button:disabled,
+.settingsBody button:disabled,
+.smallModal button:disabled {
+  opacity: 0.42;
+}
+
+.authCard {
+  width: min(100%, 390px);
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.authForm,
+.settingsStack {
+  display: grid;
+  gap: 14px;
+}
+
+.authForm label,
+.settingsStack label {
+  display: grid;
+  gap: 7px;
+}
+
+.checkboxRow {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 14px;
+}
+
+.checkboxRow input,
+.switchRow input {
+  width: auto;
+  min-height: auto;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+}
+
+.error {
+  color: #ff8a80;
+}
+
+.settingsModal,
+.modalScrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgba(6, 6, 8, 0.98);
+}
+
+.settingsModal {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  padding: max(env(safe-area-inset-top), 16px) 14px max(env(safe-area-inset-bottom), 16px);
+}
+
+.settingsHeader,
+.settingsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.settingsHeader {
+  padding-bottom: 14px;
+}
+
+.settingsHeader .closeButton {
+  min-height: 38px;
+  border-radius: 999px;
+  padding: 0 14px;
+  color: #0a84ff;
+  background: rgba(10, 132, 255, 0.14);
+}
+
+.settingsTabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.settingsTabs button {
+  min-height: 34px;
+  border-radius: 11px;
+  color: rgba(255, 255, 255, 0.72);
+  background: transparent;
+}
+
+.settingsTabs button.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.settingsBody {
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: 16px;
+}
+
+.settingsRow {
+  min-height: 58px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.settingsRow span {
+  display: grid;
+  gap: 3px;
+}
+
+.settingsRow button,
+.buttonCluster button {
+  min-height: 36px;
+}
+
+.buttonCluster {
+  display: flex;
+  gap: 8px;
+}
+
+.dangerZone,
+.debugLogPanel,
+.emptySettingsTab {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dangerZone button {
+  width: 100%;
+  margin-top: 10px;
+  background: #ff3b30;
+}
+
+.logList {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.logEntry {
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 12px;
+}
+
+.logEntry span {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.logEntry p {
+  margin: 0;
+}
+
+.logEntry.error {
+  color: #ff8a80;
+}
+
+.emptyState {
+  color: rgba(255, 255, 255, 0.56);
+}
+
+.modalScrim {
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.smallModal {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  width: min(100%, 360px);
+  padding: 22px;
+  border-radius: 22px;
+  background: #1c1c1e;
+}
+
+.modalClose {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 34px;
+  min-height: 34px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+@media (max-height: 720px) {
+  .phoneLayout {
+    padding-top: 4px;
+  }
+
+  .customKeyboard,
+  .controlDeck {
+    gap: 5px;
+  }
+
+  .keyboardKey {
+    min-height: 36px;
+  }
+}

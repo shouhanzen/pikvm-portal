@@ -1,0 +1,16 @@
+# KVM Portal PiKVM SSH config.
+#
+# To use:
+# 1. Copy this file to a private location or include it from ~/.ssh/config.
+# 2. Update IdentityFile to the key you want to use.
+# 3. Adjust User if your PiKVM SSH user is not root.
+
+Host kvm-portal-pikvm
+    HostName pikvm.tailc004ab.ts.net
+    User root
+    Port 22
+    IdentityFile ~/.ssh/pikvm
+    IdentitiesOnly yes
+    ServerAliveInterval 30
+    ServerAliveCountMax 3
+    StrictHostKeyChecking accept-new
