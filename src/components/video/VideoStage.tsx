@@ -19,8 +19,18 @@ export function VideoStage() {
   const pointerControls = useVideoPointerControls(stageRef, sourceSize);
   const { actionWheel, scrollMode, leftHold, exitScrollMode, toggleLeftHold, ...pointerHandlers } = pointerControls;
 
+  function onStagePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    const video = videoRef.current;
+    if (video?.srcObject && video.paused) {
+      event.preventDefault();
+      void video.play();
+      return;
+    }
+    pointerHandlers.onPointerDown(event);
+  }
+
   return (
-    <section ref={stageRef} className="videoStage" {...pointerHandlers}>
+    <section ref={stageRef} className="videoStage" {...pointerHandlers} onPointerDown={onStagePointerDown}>
       <video
         ref={videoRef}
         autoPlay
