@@ -2,6 +2,7 @@ import { PointerEvent, useMemo, useRef, useState } from "react";
 import { useKvmInput } from "../../app/KvmInputContext";
 import { useScribeVoice } from "../../hooks/useScribeVoice";
 import { useAppStateStore } from "../../stores/appStateStore";
+import { logTrace } from "../../stores/debugLogStore";
 import { ElevenLabsKeyPrompt } from "./ElevenLabsKeyPrompt";
 import { KeyboardKey } from "./KeyboardKey";
 import { alphaRows, numberRows, symbolRows, type KeyboardKeySpec } from "./keyboardLayout";
@@ -9,6 +10,15 @@ import { VoiceSpacebar } from "./VoiceSpacebar";
 
 const backspaceRepeatDelayMs = 450;
 const backspaceRepeatIntervalMs = 70;
+
+type KeyboardPointerSession = {
+  pointerId: number;
+  initialKeyId: string;
+  activeKeyId: string | null;
+  cancelled: boolean;
+  order: number;
+  protected: boolean;
+};
 
 export function CustomKeyboard() {
   const input = useKvmInput();
@@ -25,11 +35,10 @@ export function CustomKeyboard() {
   const setVoiceState = useAppStateStore((state) => state.setVoiceState);
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   const [lastShiftTap, setLastShiftTap] = useState(0);
-  const [activeKeyId, setActiveKeyId] = useState<string | null>(null);
-  const activePointerIdRef = useRef<number | null>(null);
-  const activeKeyIdRef = useRef<string | null>(null);
-  const initialKeyIdRef = useRef<string | null>(null);
-  const keyboardGestureCancelledRef = useRef(false);
+  const [activeKeyIds, setActiveKeyIds] = useState<string[]>([]);
+  const pointerSessionsRef = useRef<Map<number, KeyboardPointerSession>>(new Map());
+  const pointerOrderRef = useRef(0);
+  const backspacePointerIdRef = useRef<number | null>(null);
   const backspaceRepeatDelayRef = useRef<number | null>(null);
   const backspaceRepeatIntervalRef = useRef<number | null>(null);
   const backspaceRepeatStartedRef = useRef(false);
@@ -39,6 +48,7 @@ export function CustomKeyboard() {
 
   async function sendKey(key: KeyboardKeySpec) {
     if (key.kind === "layer") {
+      logTrace("keyboard", `action layer key=${key.id} next=${key.nextLayer || "alpha"}`);
       setKeyboardLayer(key.nextLayer || "alpha");
       return;
     }
@@ -51,10 +61,12 @@ export function CustomKeyboard() {
         setShiftState(shiftState === "off" ? "oneShot" : "off");
       }
       setLastShiftTap(now);
+      logTrace("keyboard", `action shift key=${key.id}`);
       return;
     }
 
     if (key.text !== undefined) {
+      logTrace("keyboard", `send text key=${key.id}`, { text: key.text });
       await input.sendText(key.text);
       clearStickyModifiers();
       return;
@@ -72,8 +84,10 @@ export function CustomKeyboard() {
     ].filter(Boolean) as string[];
 
     if (modifiers.length) {
+      logTrace("keyboard", `send shortcut key=${key.id} code=${key.code}`, { modifiers });
       await input.sendShortcut([...modifiers, key.code]);
     } else {
+      logTrace("keyboard", `send key key=${key.id} code=${key.code}`);
       await input.sendKey(key.code);
     }
 
@@ -111,122 +125,214 @@ export function CustomKeyboard() {
   }
 
   function onKeyboardPointerDown(event: PointerEvent<HTMLElement>) {
-    if (event.button !== 0 || activePointerIdRef.current !== null) {
+    if (event.button !== 0 || pointerSessionsRef.current.has(event.pointerId)) {
       return;
     }
 
     const keyId = resolveKeyId(event.currentTarget, event.clientX, event.clientY, event.target);
-    if (!keyId || !keyById.has(keyId)) {
+    const key = keyId ? keyById.get(keyId) : null;
+    if (!keyId || !key) {
+      logTrace("keyboard", "pointerdown ignored no-key", pointerDetails(event, { resolvedKeyId: keyId, layer: keyboardLayer }));
+      return;
+    }
+    if (key.kind === "backspace" && backspacePointerIdRef.current !== null) {
+      logTrace("keyboard", "pointerdown ignored backspace owned", pointerDetails(event, { owner: backspacePointerIdRef.current }));
       return;
     }
 
     event.preventDefault();
-    activePointerIdRef.current = event.pointerId;
-    initialKeyIdRef.current = keyId;
-    keyboardGestureCancelledRef.current = false;
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
     } catch {
       // Synthetic events and some browser edge cases may not allow pointer capture.
     }
-    setActiveKey(keyId);
-    if (keyId === "backspace") {
-      startBackspaceRepeat();
+    const session: KeyboardPointerSession = {
+      pointerId: event.pointerId,
+      initialKeyId: keyId,
+      activeKeyId: keyId,
+      cancelled: false,
+      order: pointerOrderRef.current + 1,
+      protected: key.kind === "backspace",
+    };
+    pointerOrderRef.current = session.order;
+    pointerSessionsRef.current.set(event.pointerId, session);
+    logTrace("keyboard", `pointerdown key=${keyId}`, pointerDetails(event, { layer: keyboardLayer }));
+    syncActiveKeys();
+    if (key.kind === "backspace") {
+      backspacePointerIdRef.current = event.pointerId;
+      startBackspaceRepeat(event.pointerId);
     }
   }
 
   function onKeyboardPointerMove(event: PointerEvent<HTMLElement>) {
-    if (event.pointerId !== activePointerIdRef.current) {
+    const session = pointerSessionsRef.current.get(event.pointerId);
+    if (!session) {
       return;
     }
 
     event.preventDefault();
-    if (initialKeyIdRef.current === "backspace") {
+    if (session.initialKeyId === "backspace") {
       return;
     }
 
     if (isAboveKeyboardCancelZone(event.currentTarget, event.clientY)) {
-      keyboardGestureCancelledRef.current = true;
-      setActiveKey(null);
+      session.cancelled = true;
+      logTrace("keyboard", "pointermove cancel top-edge", pointerDetails(event, { initialKeyId: session.initialKeyId }));
+      setSessionActiveKey(session, null, "top-edge-cancel");
       return;
     }
-    if (keyboardGestureCancelledRef.current) {
+    if (session.cancelled) {
       return;
     }
 
     const keyId = resolveKeyId(event.currentTarget, event.clientX, event.clientY);
     if (keyId && keyById.has(keyId)) {
-      if (keyId === "backspace" && initialKeyIdRef.current !== "backspace") {
+      if (keyId === "backspace" && session.initialKeyId !== "backspace") {
+        logTrace("keyboard", "pointermove ignored backspace rearm", pointerDetails(event, { initialKeyId: session.initialKeyId }));
         return;
       }
-      setActiveKey(keyId);
+      setSessionActiveKey(session, keyId, "pointermove");
     }
   }
 
   function onKeyboardPointerUp(event: PointerEvent<HTMLElement>) {
-    if (event.pointerId !== activePointerIdRef.current) {
+    const session = pointerSessionsRef.current.get(event.pointerId);
+    if (!session) {
       return;
     }
 
     event.preventDefault();
-    const isBackspaceGesture = initialKeyIdRef.current === "backspace";
-    const keyId = isBackspaceGesture
-      ? "backspace"
-      : keyboardGestureCancelledRef.current
-      ? null
-      : resolveKeyId(event.currentTarget, event.clientX, event.clientY);
-    const resolvedKeyId = keyId === "backspace" && !isBackspaceGesture ? activeKeyIdRef.current : keyId;
-    const key = isBackspaceGesture && backspaceRepeatStartedRef.current
-      ? null
-      : keyboardGestureCancelledRef.current
-      ? null
-      : resolvedKeyId
-        ? keyById.get(resolvedKeyId)
-        : activeKeyIdRef.current
-          ? keyById.get(activeKeyIdRef.current)
-          : null;
-    clearActivePointer(event);
-    if (key) {
-      void sendKey(key);
+    if (!session.protected && !session.cancelled) {
+      const keyId = resolveKeyId(event.currentTarget, event.clientX, event.clientY);
+      if (keyId && keyById.has(keyId) && keyId !== "backspace") {
+        setSessionActiveKey(session, keyId, "pointerup-resolve");
+      }
     }
+
+    if (session.protected) {
+      const key = getSessionCommitKey(session);
+      logTrace(
+        "keyboard",
+        key ? `pointerup commit key=${key.id}` : "pointerup no-commit",
+        pointerDetails(event, {
+          initialKeyId: session.initialKeyId,
+          activeKeyId: session.activeKeyId,
+          cancelled: session.cancelled,
+          backspaceRepeatStarted: backspaceRepeatStartedRef.current,
+        }),
+      );
+      clearSession(event.currentTarget, session.pointerId);
+      if (key) {
+        void sendKey(key);
+      }
+      return;
+    }
+
+    const flushSessions = [...pointerSessionsRef.current.values()]
+      .filter((candidate) => !candidate.protected && candidate.order <= session.order)
+      .sort((a, b) => a.order - b.order);
+    const flushKeys = flushSessions
+      .map((candidate) => {
+        const key = getSessionCommitKey(candidate);
+        logTrace(
+          "keyboard",
+          key ? `flush commit key=${key.id}` : "flush no-commit",
+          pointerDetails(event, {
+            pointerId: candidate.pointerId,
+            initialKeyId: candidate.initialKeyId,
+            activeKeyId: candidate.activeKeyId,
+            cancelled: candidate.cancelled,
+            forced: candidate.pointerId !== session.pointerId,
+          }),
+        );
+        return key;
+      })
+      .filter(Boolean) as KeyboardKeySpec[];
+
+    for (const candidate of flushSessions) {
+      clearSession(event.currentTarget, candidate.pointerId);
+    }
+    void sendKeysInOrder(flushKeys);
   }
 
   function onKeyboardPointerCancel(event: PointerEvent<HTMLElement>) {
-    if (event.pointerId === activePointerIdRef.current) {
-      stopBackspaceRepeat();
-      clearActivePointer(event);
+    const session = pointerSessionsRef.current.get(event.pointerId);
+    if (session) {
+      logTrace("keyboard", "pointercancel", pointerDetails(event, {
+        initialKeyId: session.initialKeyId,
+        activeKeyId: session.activeKeyId,
+      }));
+      clearSession(event.currentTarget, session.pointerId);
     }
   }
 
-  function clearActivePointer(event: PointerEvent<HTMLElement>) {
-    stopBackspaceRepeat();
+  function getSessionCommitKey(session: KeyboardPointerSession) {
+    if (session.protected && session.initialKeyId === "backspace" && backspaceRepeatStartedRef.current) {
+      return null;
+    }
+    if (session.cancelled || !session.activeKeyId) {
+      return null;
+    }
+    return keyById.get(session.activeKeyId) || null;
+  }
+
+  async function sendKeysInOrder(keys: KeyboardKeySpec[]) {
+    for (const key of keys) {
+      await sendKey(key);
+    }
+  }
+
+  function clearSession(keyboard: HTMLElement, pointerId: number) {
+    const session = pointerSessionsRef.current.get(pointerId);
+    if (!session) {
+      return;
+    }
+    if (session.protected && session.initialKeyId === "backspace") {
+      stopBackspaceRepeat();
+      if (backspacePointerIdRef.current === pointerId) {
+        backspacePointerIdRef.current = null;
+      }
+    }
+    pointerSessionsRef.current.delete(pointerId);
     try {
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
+      if (keyboard.hasPointerCapture(pointerId)) {
+        keyboard.releasePointerCapture(pointerId);
       }
     } catch {
       // Best effort; capture may not exist for synthetic/cancelled pointers.
     }
-    activePointerIdRef.current = null;
-    activeKeyIdRef.current = null;
-    initialKeyIdRef.current = null;
-    keyboardGestureCancelledRef.current = false;
-    setActiveKeyId(null);
+    syncActiveKeys();
   }
 
-  function setActiveKey(keyId: string | null) {
-    activeKeyIdRef.current = keyId;
-    setActiveKeyId(keyId);
+  function setSessionActiveKey(session: KeyboardPointerSession, keyId: string | null, reason: string) {
+    if (session.activeKeyId !== keyId) {
+      logTrace("keyboard", `active p${session.pointerId} ${session.activeKeyId || "none"} -> ${keyId || "none"} (${reason})`);
+    }
+    session.activeKeyId = keyId;
+    syncActiveKeys();
   }
 
-  function startBackspaceRepeat() {
+  function syncActiveKeys() {
+    const keyIds = new Set<string>();
+    for (const session of pointerSessionsRef.current.values()) {
+      if (session.activeKeyId) {
+        keyIds.add(session.activeKeyId);
+      }
+    }
+    setActiveKeyIds([...keyIds]);
+  }
+
+  function startBackspaceRepeat(pointerId: number) {
     stopBackspaceRepeat();
     backspaceRepeatStartedRef.current = false;
+    logTrace("keyboard", "backspace repeat armed");
     backspaceRepeatDelayRef.current = window.setTimeout(() => {
       backspaceRepeatStartedRef.current = true;
+      logTrace("keyboard", "backspace repeat started");
       void input.sendKey("Backspace");
       backspaceRepeatIntervalRef.current = window.setInterval(() => {
-        if (activePointerIdRef.current !== null && initialKeyIdRef.current === "backspace") {
+        const session = pointerSessionsRef.current.get(pointerId);
+        if (session?.initialKeyId === "backspace") {
           void input.sendKey("Backspace");
         }
       }, backspaceRepeatIntervalMs);
@@ -261,7 +367,7 @@ export function CustomKeyboard() {
                 <VoiceSpacebar
                   key={key.id}
                   keyId={key.id}
-                  active={activeKeyId === key.id}
+                  active={activeKeyIds.includes(key.id)}
                   status={scribe.status}
                   onSpace={() => void input.sendKey("Space")}
                   onStartVoice={startVoice}
@@ -272,7 +378,7 @@ export function CustomKeyboard() {
                   key={key.id}
                   keyId={key.id}
                   label={displayLabel(key, shiftState)}
-                  active={activeKeyId === key.id}
+                  active={activeKeyIds.includes(key.id)}
                   className={[
                     key.wide ? `wide-${key.wide}` : "",
                     key.kind === "shift" && shiftState !== "off" ? "active" : "",
@@ -340,4 +446,14 @@ function clamp(value: number, min: number, max: number) {
 
 function isAboveKeyboardCancelZone(keyboard: HTMLElement, clientY: number) {
   return clientY < keyboard.getBoundingClientRect().top - 24;
+}
+
+function pointerDetails(event: PointerEvent<HTMLElement>, extra: Record<string, unknown> = {}) {
+  return {
+    pointerId: event.pointerId,
+    x: Math.round(event.clientX),
+    y: Math.round(event.clientY),
+    pointerType: event.pointerType,
+    ...extra,
+  };
 }

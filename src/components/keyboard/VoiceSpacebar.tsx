@@ -2,6 +2,7 @@ import { Mic, Square } from "lucide-react";
 import { PointerEvent, useRef } from "react";
 import type { ScribeVoiceStatus } from "../../hooks/useScribeVoice";
 import { useAppStateStore } from "../../stores/appStateStore";
+import { logTrace } from "../../stores/debugLogStore";
 
 const longPressMs = 430;
 const prepareVoiceMs = 215;
@@ -51,6 +52,7 @@ export function VoiceSpacebar({
       if (markRecording) {
         recordingStartedRef.current = true;
         setVoiceState("recordingHeld");
+        logTrace("keyboard", "space voice recording marked after prepare");
       }
       return;
     }
@@ -60,6 +62,7 @@ export function VoiceSpacebar({
       recordingStartedRef.current = true;
       setVoiceState("recordingHeld");
     }
+    logTrace("keyboard", markRecording ? "space voice start" : "space voice prepare");
     try {
       await onStartVoice();
       voicePreparedRef.current = true;
@@ -86,6 +89,7 @@ export function VoiceSpacebar({
     recordingStartedRef.current = false;
     event.currentTarget.setPointerCapture(event.pointerId);
     setVoiceState("pressing");
+    logTrace("keyboard", "space pointerdown", pointerDetails(event));
     prepareTimerRef.current = window.setTimeout(() => {
       void startVoice(false);
     }, prepareVoiceMs);
@@ -102,6 +106,7 @@ export function VoiceSpacebar({
 
     if (startYRef.current - event.clientY > lockDistancePx) {
       setVoiceState("recordingLocked");
+      logTrace("keyboard", "space voice locked", pointerDetails(event));
     }
   }
 
@@ -115,20 +120,24 @@ export function VoiceSpacebar({
     pointerIdRef.current = null;
 
     if (voiceState === "recordingLocked") {
+      logTrace("keyboard", "space pointerup locked no-stop", pointerDetails(event));
       return;
     }
 
     if (recordingStartedRef.current) {
+      logTrace("keyboard", "space pointerup stop voice", pointerDetails(event));
       onStopVoice();
       setVoiceState("flushing");
       window.setTimeout(() => setVoiceState("idle"), 1000);
     } else {
       if (voicePreparingRef.current || voicePreparedRef.current) {
+        logTrace("keyboard", "space pointerup cancel prepared voice", pointerDetails(event));
         onStopVoice();
         voicePreparingRef.current = false;
         voicePreparedRef.current = false;
       }
       setVoiceState("idle");
+      logTrace("keyboard", "space pointerup commit space", pointerDetails(event));
       onSpace();
     }
   }
@@ -138,7 +147,10 @@ export function VoiceSpacebar({
     clearTimer();
     pointerIdRef.current = null;
     if ((recordingStartedRef.current || voicePreparingRef.current || voicePreparedRef.current) && voiceState !== "recordingLocked") {
+      logTrace("keyboard", "space pointercancel stop voice", pointerDetails(event));
       onStopVoice();
+    } else {
+      logTrace("keyboard", "space pointercancel", pointerDetails(event));
     }
     voicePreparingRef.current = false;
     voicePreparedRef.current = false;
@@ -166,6 +178,15 @@ export function VoiceSpacebar({
       ) : null}
     </button>
   );
+}
+
+function pointerDetails(event: PointerEvent<HTMLButtonElement>) {
+  return {
+    pointerId: event.pointerId,
+    x: Math.round(event.clientX),
+    y: Math.round(event.clientY),
+    pointerType: event.pointerType,
+  };
 }
 
 function Wave() {

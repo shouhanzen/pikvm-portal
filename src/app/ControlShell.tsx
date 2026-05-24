@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { logout, printText, setMouseOutput } from "../services/pikvmHttpApi";
 import { PiKvmSocket, type PiKvmSocketStatus } from "../services/pikvmSocket";
-import { logError, logInfo } from "../stores/debugLogStore";
+import { logError, logInfo, logTrace, logWarn } from "../stores/debugLogStore";
 import { useAppStateStore, type TerminalProfile } from "../stores/appStateStore";
 import type { TerminalAction } from "../types/hid";
 import { KvmInputContext, type KvmInput } from "./KvmInputContext";
@@ -115,14 +115,26 @@ export function ControlShell({ onLoggedOut }: { onLoggedOut: () => void }) {
       socketStatus,
       sendKey: async (key) => {
         try {
-          await socketRef.current?.sendKey(key);
+          const socket = socketRef.current;
+          if (!socket) {
+            logWarn("hid", `sendKey dropped key=${key} socket=missing status=${socketStatus}`);
+            return;
+          }
+          await socket.sendKey(key);
+          logTrace("hid", `sendKey ok key=${key}`);
         } catch (error) {
           logError("hid", error);
         }
       },
       sendShortcut: async (keys) => {
         try {
-          await socketRef.current?.sendShortcut(keys);
+          const socket = socketRef.current;
+          if (!socket) {
+            logWarn("hid", `sendShortcut dropped keys=${keys.join("+")} socket=missing status=${socketStatus}`);
+            return;
+          }
+          await socket.sendShortcut(keys);
+          logTrace("hid", `sendShortcut ok keys=${keys.join("+")}`);
         } catch (error) {
           logError("hid", error);
         }
@@ -130,6 +142,7 @@ export function ControlShell({ onLoggedOut }: { onLoggedOut: () => void }) {
       sendText: async (text) => {
         try {
           await printText(text);
+          logTrace("hid-print", `sendText ok length=${text.length}`);
         } catch (error) {
           logError("hid-print", error);
         }
