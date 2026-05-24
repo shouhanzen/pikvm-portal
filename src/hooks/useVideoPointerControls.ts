@@ -18,6 +18,16 @@ export type ActionWheelState = {
   selectedAction: ActionWheelAction | null;
 };
 
+export type ScrollRulerState = {
+  visible: boolean;
+  fading: boolean;
+  origin: { x: number; y: number };
+  offset: number;
+  pulse: number;
+  bandPx: number;
+  tickPx: number;
+};
+
 type MouseDrag = {
   pointerId: number;
   startX: number;
@@ -56,6 +66,8 @@ const tapMaxMs = 450;
 const longHoldMs = 500;
 const actionRadiusPx = 48;
 const scrollTickDistancePx = 40;
+const scrollRulerBandPx = 240;
+const scrollRulerFadeMs = 220;
 const scrollMoveThresholdPx = 6;
 const scrollMomentumDecay = 0.92;
 const scrollMomentumMinVelocity = 0.02;
@@ -80,6 +92,9 @@ export function useVideoPointerControls(
   const momentumVelocityRef = useRef(0);
   const momentumLastTimeRef = useRef(0);
   const scrollRemainderRef = useRef(0);
+  const scrollRulerOffsetRef = useRef(0);
+  const scrollRulerPulseRef = useRef(0);
+  const scrollRulerHideTimerRef = useRef<number | null>(null);
   const scrollMode = useAppStateStore((state) => state.scrollModeEnabled);
   const setScrollMode = useAppStateStore((state) => state.setScrollModeEnabled);
   const [leftHold, setLeftHoldState] = useState(false);
@@ -89,11 +104,23 @@ export function useVideoPointerControls(
     center: { x: 0, y: 0 },
     selectedAction: null,
   });
+  const [scrollRuler, setScrollRuler] = useState<ScrollRulerState>({
+    visible: false,
+    fading: false,
+    origin: { x: 0, y: 0 },
+    offset: 0,
+    pulse: 0,
+    bandPx: scrollRulerBandPx,
+    tickPx: scrollTickDistancePx,
+  });
 
   useEffect(() => {
     return () => {
       if (leftHoldRef.current) {
         void input.setMouseButton("left", false);
+      }
+      if (scrollRulerHideTimerRef.current !== null) {
+        window.clearTimeout(scrollRulerHideTimerRef.current);
       }
     };
   }, [input]);
@@ -119,6 +146,7 @@ export function useVideoPointerControls(
 
     if (pointersRef.current.size >= 2) {
       cancelLongHold();
+      fadeScrollRuler();
       beginViewGesture();
       return;
     }
@@ -132,6 +160,7 @@ export function useVideoPointerControls(
 
     if (scrollMode) {
       modeRef.current = "scroll";
+      showScrollRuler(point);
       scrollDragRef.current = {
         pointerId: event.pointerId,
         startX: point.x,
@@ -239,6 +268,7 @@ export function useVideoPointerControls(
 
     const now = performance.now();
     const dy = point.y - drag.lastY;
+    updateScrollRulerOffset(dy, false);
     if (drag.moved) {
       sendScrollForFingerDelta(dy, drag);
     }
@@ -264,8 +294,10 @@ export function useVideoPointerControls(
     }
 
     if (ticks) {
+      pulseScrollRuler();
       void input.sendMouseWheel(0, ticks);
     }
+    return ticks;
   }
 
   function beginViewGesture() {
@@ -371,8 +403,12 @@ export function useVideoPointerControls(
       }
     } else if (modeRef.current === "scroll") {
       const drag = scrollDragRef.current;
+      let momentumStarted = false;
       if (allowClick && drag?.moved) {
-        maybeStartMomentum(drag);
+        momentumStarted = maybeStartMomentum(drag);
+      }
+      if (!momentumStarted) {
+        fadeScrollRuler();
       }
       scrollRemainderRef.current = drag?.remainder || scrollRemainderRef.current;
     }
@@ -448,7 +484,11 @@ export function useVideoPointerControls(
 
   function executeAction(action: ActionWheelAction, holdPoint: Point) {
     if (action === "scroll") {
-      setScrollMode(!useAppStateStore.getState().scrollModeEnabled);
+      const nextScrollMode = !useAppStateStore.getState().scrollModeEnabled;
+      setScrollMode(nextScrollMode);
+      if (!nextScrollMode) {
+        hideScrollRuler();
+      }
       cancelMomentum();
       return;
     }
@@ -473,18 +513,22 @@ export function useVideoPointerControls(
     const dt = Math.max(drag.lastTime - drag.previousTime, 1);
     const velocity = (drag.lastY - drag.previousY) / dt;
     if (Math.abs(velocity) < scrollMomentumMinVelocity) {
-      return;
+      return false;
     }
 
     momentumVelocityRef.current = velocity;
     momentumLastTimeRef.current = performance.now();
     momentumFrameRef.current = window.requestAnimationFrame(runMomentum);
+    setScrollRuler((state) => state.visible ? { ...state, fading: false } : state);
+    return true;
   }
 
   function runMomentum(now: number) {
     const dt = Math.min(now - momentumLastTimeRef.current, 32);
     momentumLastTimeRef.current = now;
-    sendScrollForFingerDelta(momentumVelocityRef.current * dt);
+    const dy = momentumVelocityRef.current * dt;
+    updateScrollRulerOffset(dy, true);
+    sendScrollForFingerDelta(dy);
     momentumVelocityRef.current *= scrollMomentumDecay;
 
     if (Math.abs(momentumVelocityRef.current) >= scrollMomentumMinVelocity) {
@@ -492,6 +536,7 @@ export function useVideoPointerControls(
     } else {
       momentumFrameRef.current = null;
       momentumVelocityRef.current = 0;
+      fadeScrollRuler();
     }
   }
 
@@ -503,9 +548,62 @@ export function useVideoPointerControls(
     momentumVelocityRef.current = 0;
   }
 
+  function showScrollRuler(origin: Point) {
+    if (scrollRulerHideTimerRef.current !== null) {
+      window.clearTimeout(scrollRulerHideTimerRef.current);
+      scrollRulerHideTimerRef.current = null;
+    }
+    scrollRulerOffsetRef.current = 0;
+    setScrollRuler({
+      visible: true,
+      fading: false,
+      origin: { x: origin.x, y: origin.y },
+      offset: 0,
+      pulse: scrollRulerPulseRef.current,
+      bandPx: scrollRulerBandPx,
+      tickPx: scrollTickDistancePx,
+    });
+  }
+
+  function updateScrollRulerOffset(dy: number, momentum: boolean) {
+    scrollRulerOffsetRef.current += dy;
+    if (momentum && scrollRulerHideTimerRef.current !== null) {
+      window.clearTimeout(scrollRulerHideTimerRef.current);
+      scrollRulerHideTimerRef.current = null;
+    }
+    setScrollRuler((state) =>
+      state.visible ? { ...state, fading: false, offset: scrollRulerOffsetRef.current } : state,
+    );
+  }
+
+  function pulseScrollRuler() {
+    scrollRulerPulseRef.current += 1;
+    setScrollRuler((state) => state.visible ? { ...state, pulse: scrollRulerPulseRef.current } : state);
+  }
+
+  function fadeScrollRuler() {
+    if (scrollRulerHideTimerRef.current !== null) {
+      window.clearTimeout(scrollRulerHideTimerRef.current);
+    }
+    setScrollRuler((state) => state.visible ? { ...state, fading: true } : state);
+    scrollRulerHideTimerRef.current = window.setTimeout(() => {
+      scrollRulerHideTimerRef.current = null;
+      hideScrollRuler();
+    }, scrollRulerFadeMs);
+  }
+
+  function hideScrollRuler() {
+    if (scrollRulerHideTimerRef.current !== null) {
+      window.clearTimeout(scrollRulerHideTimerRef.current);
+      scrollRulerHideTimerRef.current = null;
+    }
+    setScrollRuler((state) => ({ ...state, visible: false, fading: false, offset: 0 }));
+  }
+
   return {
     actionWheel,
     scrollMode,
+    scrollRuler,
     leftHold,
     exitScrollMode: () => {
       cancelMomentum();

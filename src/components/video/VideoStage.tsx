@@ -2,7 +2,7 @@ import { ArrowUpDown, Crosshair, HandGrab, MouseLeft, MouseRight } from "lucide-
 import type { ReactNode } from "react";
 import { useRef } from "react";
 import { useElementRect } from "../../hooks/useElementRect";
-import { type ActionWheelAction, useVideoPointerControls } from "../../hooks/useVideoPointerControls";
+import { type ActionWheelAction, type ScrollRulerState, useVideoPointerControls } from "../../hooks/useVideoPointerControls";
 import { useWebRTCStream } from "../../hooks/useWebRTCStream";
 import { useAppStateStore } from "../../stores/appStateStore";
 import { useViewStateStore } from "../../stores/viewStateStore";
@@ -17,7 +17,7 @@ export function VideoStage() {
   const scale = useViewStateStore((state) => state.scale);
   const sourceAnchor = useViewStateStore((state) => state.sourceAnchor);
   const pointerControls = useVideoPointerControls(stageRef, sourceSize);
-  const { actionWheel, scrollMode, leftHold, exitScrollMode, toggleLeftHold, ...pointerHandlers } = pointerControls;
+  const { actionWheel, scrollMode, scrollRuler, leftHold, exitScrollMode, toggleLeftHold, ...pointerHandlers } = pointerControls;
 
   function onStagePointerDown(event: React.PointerEvent<HTMLDivElement>) {
     const video = videoRef.current;
@@ -81,6 +81,7 @@ export function VideoStage() {
       {actionWheel.visible ? (
         <ActionWheel center={actionWheel.center} selectedAction={actionWheel.selectedAction} leftHold={leftHold} />
       ) : null}
+      {scrollRuler.visible ? <ScrollRuler state={scrollRuler} /> : null}
       {debugOverlayEnabled ? (
         <DebugVideoOverlay
           status={status}
@@ -91,6 +92,48 @@ export function VideoStage() {
         />
       ) : null}
     </section>
+  );
+}
+
+function ScrollRuler({ state }: { state: ScrollRulerState }) {
+  const halfBand = state.bandPx / 2;
+  const lineCount = Math.ceil(state.bandPx / state.tickPx) + 3;
+  const offset = state.offset % state.tickPx;
+  const lines = [];
+
+  for (let index = -lineCount; index <= lineCount; index += 1) {
+    if (index === 0) {
+      continue;
+    }
+    const relativeY = index * state.tickPx + offset;
+    if (relativeY < -halfBand || relativeY > halfBand) {
+      continue;
+    }
+    const distance = Math.abs(relativeY) / halfBand;
+    lines.push({ id: index, y: halfBand + relativeY, opacity: Math.max(0.18, 0.9 - distance * 0.62) });
+  }
+
+  return (
+    <div
+      className={`scrollRuler ${state.fading ? "fading" : ""}`}
+      style={{
+        left: state.origin.x,
+        top: state.origin.y,
+        height: state.bandPx,
+      }}
+      aria-hidden="true"
+    >
+      <div className="scrollRulerBand">
+        {lines.map((line) => (
+          <i
+            className="scrollRulerTick"
+            key={line.id}
+            style={{ top: line.y, opacity: line.opacity }}
+          />
+        ))}
+        <b className="scrollRulerZero" key={state.pulse} />
+      </div>
+    </div>
   );
 }
 
