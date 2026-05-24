@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { logout, printText } from "../services/pikvmHttpApi";
+import { logout, printText, setMouseOutput } from "../services/pikvmHttpApi";
 import { PiKvmSocket, type PiKvmSocketStatus } from "../services/pikvmSocket";
 import { logDebug, logError } from "../stores/debugLogStore";
+import { useAppStateStore, type TerminalProfile } from "../stores/appStateStore";
 import type { TerminalAction } from "../types/hid";
 import { KvmInputContext, type KvmInput } from "./KvmInputContext";
 import { PhoneLayout } from "./PhoneLayout";
@@ -13,11 +14,19 @@ const terminalShortcuts: Record<TerminalAction, string[]> = {
   closeTab: ["MetaLeft", "KeyW"],
 };
 
+const tmuxActions: Record<TerminalAction, string[]> = {
+  previousTab: ["KeyP"],
+  nextTab: ["KeyN"],
+  newTab: ["KeyC"],
+  closeTab: ["ShiftLeft", "Digit7"],
+};
+
 export function ControlShell({ onLoggedOut }: { onLoggedOut: () => void }) {
   const socketRef = useRef<PiKvmSocket | null>(null);
   const intentionalCloseRef = useRef(false);
   const reconnectTimerRef = useRef<number | null>(null);
   const [socketStatus, setSocketStatus] = useState<PiKvmSocketStatus>("idle");
+  const terminalProfile = useAppStateStore((state) => state.terminalProfile);
 
   useEffect(() => {
     function clearReconnect() {
@@ -141,9 +150,18 @@ export function ControlShell({ onLoggedOut }: { onLoggedOut: () => void }) {
       },
       moveMouseAbsolute: async (x, y) => {
         try {
+          await setMouseOutput("usb");
+          await wait(40);
           await socketRef.current?.moveMouseAbsolute(x, y);
         } catch (error) {
           logError("mouse-rescue", error);
+        } finally {
+          try {
+            await wait(40);
+            await setMouseOutput("usb_rel");
+          } catch (error) {
+            logError("mouse-rescue-restore", error);
+          }
         }
       },
       setMouseButton: async (button, state) => {
@@ -162,13 +180,13 @@ export function ControlShell({ onLoggedOut }: { onLoggedOut: () => void }) {
       },
       sendTerminalAction: async (action) => {
         try {
-          await socketRef.current?.sendShortcut(terminalShortcuts[action]);
+          await sendTerminalAction(socketRef.current, terminalProfile, action);
         } catch (error) {
           logError("terminal", error);
         }
       },
     }),
-    [socketStatus],
+    [socketStatus, terminalProfile],
   );
 
   async function handleLogout() {
@@ -187,4 +205,23 @@ export function ControlShell({ onLoggedOut }: { onLoggedOut: () => void }) {
       <PhoneLayout onLogout={() => void handleLogout()} />
     </KvmInputContext.Provider>
   );
+}
+
+async function sendTerminalAction(
+  socket: PiKvmSocket | null,
+  profile: TerminalProfile,
+  action: TerminalAction,
+) {
+  if (profile === "tmux") {
+    await socket?.sendShortcut(["ControlLeft", "KeyB"]);
+    await wait(45);
+    await socket?.sendShortcut(tmuxActions[action]);
+    return;
+  }
+
+  await socket?.sendShortcut(terminalShortcuts[action]);
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }

@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { useAppStateStore, type SettingsTab } from "../../stores/appStateStore";
+import { useAppStateStore, type SettingsTab, type TerminalProfile } from "../../stores/appStateStore";
 import { useDebugLogStore } from "../../stores/debugLogStore";
 import { useInputPrefsStore } from "../../stores/inputPrefsStore";
 import { useLocalSecretsStore } from "../../stores/localSecretsStore";
@@ -17,10 +17,12 @@ export function SettingsModal({ onLogout }: { onLogout: () => void }) {
   const settingsTab = useAppStateStore((state) => state.settingsTab);
   const debugOverlayEnabled = useAppStateStore((state) => state.debugOverlayEnabled);
   const debugLogOpen = useAppStateStore((state) => state.debugLogOpen);
+  const terminalProfile = useAppStateStore((state) => state.terminalProfile);
   const closeSettings = useAppStateStore((state) => state.closeSettings);
   const setSettingsTab = useAppStateStore((state) => state.setSettingsTab);
   const setDebugOverlayEnabled = useAppStateStore((state) => state.setDebugOverlayEnabled);
   const setDebugLogOpen = useAppStateStore((state) => state.setDebugLogOpen);
+  const setTerminalProfile = useAppStateStore((state) => state.setTerminalProfile);
   const resetAppState = useAppStateStore((state) => state.resetAppState);
   const resetView = useViewStateStore((state) => state.resetView);
   const resetInputPrefs = useInputPrefsStore((state) => state.resetInputPrefs);
@@ -80,6 +82,19 @@ export function SettingsModal({ onLogout }: { onLogout: () => void }) {
       <div className="settingsBody">
         {settingsTab === "general" ? (
           <div className="settingsStack">
+            <label className="settingsRow terminalProfileRow">
+              <span>
+                <strong>Tab controls</strong>
+                <small>Choose which terminal app the tab buttons control.</small>
+              </span>
+              <select
+                value={terminalProfile}
+                onChange={(event) => setTerminalProfile(event.target.value as TerminalProfile)}
+              >
+                <option value="macTerminal">Mac Terminal</option>
+                <option value="tmux">tmux</option>
+              </select>
+            </label>
             <label className="settingsRow switchRow">
               <span>
                 <strong>Debug video overlay</strong>

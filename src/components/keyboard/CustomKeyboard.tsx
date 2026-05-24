@@ -24,6 +24,7 @@ export function CustomKeyboard() {
   const [lastShiftTap, setLastShiftTap] = useState(0);
   const [activeKeyId, setActiveKeyId] = useState<string | null>(null);
   const activePointerIdRef = useRef<number | null>(null);
+  const keyboardGestureCancelledRef = useRef(false);
   const scribe = useScribeVoice((text) => void input.sendText(text));
   const rows = keyboardLayer === "alpha" ? alphaRows : keyboardLayer === "numbers" ? numberRows : symbolRows;
   const keyById = useMemo(() => new Map(rows.flat().map((key) => [key.id, key])), [rows]);
@@ -106,13 +107,14 @@ export function CustomKeyboard() {
       return;
     }
 
-    const keyId = findKeyId(event.target);
+    const keyId = resolveKeyId(event.currentTarget, event.clientX, event.clientY, event.target);
     if (!keyId || !keyById.has(keyId)) {
       return;
     }
 
     event.preventDefault();
     activePointerIdRef.current = event.pointerId;
+    keyboardGestureCancelledRef.current = false;
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
     } catch {
@@ -127,8 +129,19 @@ export function CustomKeyboard() {
     }
 
     event.preventDefault();
-    const keyId = findKeyId(document.elementFromPoint(event.clientX, event.clientY));
-    setActiveKeyId(keyId && keyById.has(keyId) ? keyId : null);
+    if (isAboveKeyboardCancelZone(event.currentTarget, event.clientY)) {
+      keyboardGestureCancelledRef.current = true;
+      setActiveKeyId(null);
+      return;
+    }
+    if (keyboardGestureCancelledRef.current) {
+      return;
+    }
+
+    const keyId = resolveKeyId(event.currentTarget, event.clientX, event.clientY);
+    if (keyId && keyById.has(keyId)) {
+      setActiveKeyId(keyId);
+    }
   }
 
   function onKeyboardPointerUp(event: PointerEvent<HTMLElement>) {
@@ -137,8 +150,16 @@ export function CustomKeyboard() {
     }
 
     event.preventDefault();
-    const keyId = findKeyId(document.elementFromPoint(event.clientX, event.clientY));
-    const key = keyId ? keyById.get(keyId) : null;
+    const keyId = keyboardGestureCancelledRef.current
+      ? null
+      : resolveKeyId(event.currentTarget, event.clientX, event.clientY);
+    const key = keyboardGestureCancelledRef.current
+      ? null
+      : keyId
+        ? keyById.get(keyId)
+        : activeKeyId
+          ? keyById.get(activeKeyId)
+          : null;
     clearActivePointer(event);
     if (key) {
       void sendKey(key);
@@ -160,6 +181,7 @@ export function CustomKeyboard() {
       // Best effort; capture may not exist for synthetic/cancelled pointers.
     }
     activePointerIdRef.current = null;
+    keyboardGestureCancelledRef.current = false;
     setActiveKeyId(null);
   }
 
@@ -179,6 +201,8 @@ export function CustomKeyboard() {
               key.kind === "space" ? (
                 <VoiceSpacebar
                   key={key.id}
+                  keyId={key.id}
+                  active={activeKeyId === key.id}
                   status={scribe.status}
                   onSpace={() => void input.sendKey("Space")}
                   onStartVoice={startVoice}
@@ -218,4 +242,43 @@ function displayLabel(key: KeyboardKeySpec, shiftState: "off" | "oneShot" | "loc
 
 function findKeyId(target: EventTarget | Element | null) {
   return target instanceof Element ? target.closest<HTMLElement>("[data-key-id]")?.dataset.keyId || null : null;
+}
+
+function resolveKeyId(keyboard: HTMLElement, clientX: number, clientY: number, target?: EventTarget | Element | null) {
+  const directKeyId = findKeyId(target ?? document.elementFromPoint(clientX, clientY));
+  if (directKeyId) {
+    return directKeyId;
+  }
+
+  const keyboardRect = keyboard.getBoundingClientRect();
+  if (
+    clientX < keyboardRect.left ||
+    clientX > keyboardRect.right ||
+    clientY < keyboardRect.top ||
+    clientY > keyboardRect.bottom
+  ) {
+    return null;
+  }
+
+  let nearest: { id: string; distance: number } | null = null;
+  for (const keyElement of keyboard.querySelectorAll<HTMLElement>("[data-key-id]")) {
+    const rect = keyElement.getBoundingClientRect();
+    const clampedX = clamp(clientX, rect.left, rect.right);
+    const clampedY = clamp(clientY, rect.top, rect.bottom);
+    const distance = Math.hypot(clientX - clampedX, clientY - clampedY);
+    const keyId = keyElement.dataset.keyId;
+    if (keyId && (!nearest || distance < nearest.distance)) {
+      nearest = { id: keyId, distance };
+    }
+  }
+
+  return nearest?.id || null;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function isAboveKeyboardCancelZone(keyboard: HTMLElement, clientY: number) {
+  return clientY < keyboard.getBoundingClientRect().top - 24;
 }

@@ -46,3 +46,14 @@ export async function printText(text: string) {
     throw new Error(`${response.status} ${response.statusText}`);
   }
 }
+
+export async function setMouseOutput(output: "usb" | "usb_rel") {
+  const response = await fetch(`/api/hid/set_params?mouse_output=${output}`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}`);
+  }
+}

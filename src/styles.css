@@ -27,7 +27,8 @@ body,
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -47,6 +48,15 @@ input {
   background: rgba(255, 255, 255, 0.08);
   -webkit-user-select: text;
   user-select: text;
+}
+
+select {
+  min-height: 36px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 28px 0 10px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .phoneLayout {
@@ -175,68 +185,68 @@ input {
     conic-gradient(
       from -45deg,
       rgba(52, 199, 89, 0.16) 0deg 90deg,
-      rgba(100, 210, 255, 0.14) 90deg 180deg,
-      rgba(255, 214, 10, 0.13) 180deg 270deg,
-      rgba(255, 69, 58, 0.14) 270deg 360deg
+      rgba(255, 69, 58, 0.14) 90deg 180deg,
+      rgba(100, 210, 255, 0.14) 180deg 270deg,
+      rgba(255, 214, 10, 0.13) 270deg 360deg
     );
   opacity: 0.95;
   backdrop-filter: blur(5px);
-  -webkit-mask: radial-gradient(circle, transparent 0 46px, #000 47px 105px);
-  mask: radial-gradient(circle, transparent 0 46px, #000 47px 105px);
+  -webkit-mask: radial-gradient(circle, transparent 0 46px, rgba(0, 0, 0, 0.92) 48px, rgba(0, 0, 0, 0.2) 104px, transparent 106px);
+  mask: radial-gradient(circle, transparent 0 46px, rgba(0, 0, 0, 0.92) 48px, rgba(0, 0, 0, 0.2) 104px, transparent 106px);
 }
 
 .actionWheel.selected-scroll .actionWheelGuide {
   background:
-    radial-gradient(circle, transparent 0 46px, rgba(52, 199, 89, 0.22) 47px, rgba(52, 199, 89, 0.05) 100px, transparent 106px),
+    radial-gradient(circle, transparent 0 46px, rgba(255, 255, 255, 0.08) 47px, rgba(255, 255, 255, 0.02) 86px, transparent 106px),
     conic-gradient(
       from -45deg,
       rgba(52, 199, 89, 0.36) 0deg 90deg,
-      rgba(100, 210, 255, 0.14) 90deg 180deg,
-      rgba(255, 214, 10, 0.13) 180deg 270deg,
-      rgba(255, 69, 58, 0.14) 270deg 360deg
+      rgba(255, 69, 58, 0.14) 90deg 180deg,
+      rgba(100, 210, 255, 0.14) 180deg 270deg,
+      rgba(255, 214, 10, 0.13) 270deg 360deg
     );
 }
 
 .actionWheel.selected-rightClick .actionWheelGuide {
   background:
-    radial-gradient(circle, transparent 0 46px, rgba(255, 69, 58, 0.22) 47px, rgba(255, 69, 58, 0.05) 100px, transparent 106px),
+    radial-gradient(circle, transparent 0 46px, rgba(255, 255, 255, 0.08) 47px, rgba(255, 255, 255, 0.02) 86px, transparent 106px),
     conic-gradient(
       from -45deg,
       rgba(52, 199, 89, 0.16) 0deg 90deg,
-      rgba(100, 210, 255, 0.14) 90deg 180deg,
-      rgba(255, 214, 10, 0.13) 180deg 270deg,
-      rgba(255, 69, 58, 0.38) 270deg 360deg
+      rgba(255, 69, 58, 0.38) 90deg 180deg,
+      rgba(100, 210, 255, 0.14) 180deg 270deg,
+      rgba(255, 214, 10, 0.13) 270deg 360deg
     );
 }
 
 .actionWheel.selected-rescue .actionWheelGuide {
   background:
-    radial-gradient(circle, transparent 0 46px, rgba(255, 214, 10, 0.22) 47px, rgba(255, 214, 10, 0.05) 100px, transparent 106px),
+    radial-gradient(circle, transparent 0 46px, rgba(255, 255, 255, 0.08) 47px, rgba(255, 255, 255, 0.02) 86px, transparent 106px),
     conic-gradient(
       from -45deg,
       rgba(52, 199, 89, 0.16) 0deg 90deg,
-      rgba(100, 210, 255, 0.14) 90deg 180deg,
-      rgba(255, 214, 10, 0.38) 180deg 270deg,
-      rgba(255, 69, 58, 0.14) 270deg 360deg
+      rgba(255, 69, 58, 0.14) 90deg 180deg,
+      rgba(100, 210, 255, 0.14) 180deg 270deg,
+      rgba(255, 214, 10, 0.38) 270deg 360deg
     );
 }
 
 .actionWheel.selected-leftHold .actionWheelGuide {
   background:
-    radial-gradient(circle, transparent 0 46px, rgba(100, 210, 255, 0.22) 47px, rgba(100, 210, 255, 0.05) 100px, transparent 106px),
+    radial-gradient(circle, transparent 0 46px, rgba(255, 255, 255, 0.08) 47px, rgba(255, 255, 255, 0.02) 86px, transparent 106px),
     conic-gradient(
       from -45deg,
       rgba(52, 199, 89, 0.16) 0deg 90deg,
-      rgba(100, 210, 255, 0.38) 90deg 180deg,
-      rgba(255, 214, 10, 0.13) 180deg 270deg,
-      rgba(255, 69, 58, 0.14) 270deg 360deg
+      rgba(255, 69, 58, 0.14) 90deg 180deg,
+      rgba(100, 210, 255, 0.38) 180deg 270deg,
+      rgba(255, 214, 10, 0.13) 270deg 360deg
     );
 }
 
 .actionWheelLine {
   position: absolute;
   background: rgba(255, 255, 255, 0.28);
-  transform: translate(-50%, -50%);
+  transform-origin: center;
 }
 
 .actionWheelLine.vertical {
@@ -244,13 +254,15 @@ input {
   top: 0;
   width: 1px;
   height: 210px;
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .actionWheelLine.horizontal {
   left: 0;
   top: 0;
-  width: 210px;
-  height: 1px;
+  width: 1px;
+  height: 210px;
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .actionWheelCenter {
@@ -705,6 +717,10 @@ input {
 .settingsRow button,
 .buttonCluster button {
   min-height: 36px;
+}
+
+.terminalProfileRow select {
+  max-width: 150px;
 }
 
 .buttonCluster {

@@ -4,10 +4,12 @@ import { persist } from "zustand/middleware";
 export type KeyboardLayer = "alpha" | "numbers" | "symbols";
 export type ShiftState = "off" | "oneShot" | "locked";
 export type SettingsTab = "general" | "inputs" | "secrets";
+export type TerminalProfile = "macTerminal" | "tmux";
 export type VoiceState = "idle" | "pressing" | "recordingHeld" | "recordingLocked" | "flushing";
 
 type AppState = {
   keyboardVisible: boolean;
+  terminalProfile: TerminalProfile;
   keyboardLayer: KeyboardLayer;
   shiftState: ShiftState;
   ctrlSticky: boolean;
@@ -20,6 +22,7 @@ type AppState = {
   voiceState: VoiceState;
   setKeyboardVisible: (visible: boolean) => void;
   toggleKeyboardVisible: () => void;
+  setTerminalProfile: (profile: TerminalProfile) => void;
   setKeyboardLayer: (layer: KeyboardLayer) => void;
   setShiftState: (state: ShiftState) => void;
   setCtrlSticky: (value: boolean) => void;
@@ -48,6 +51,7 @@ export const useAppStateStore = create<AppState>()(
   persist(
     (set) => ({
       keyboardVisible: true,
+      terminalProfile: "macTerminal",
       settingsOpen: false,
       settingsTab: "general",
       debugOverlayEnabled: false,
@@ -63,6 +67,7 @@ export const useAppStateStore = create<AppState>()(
           keyboardVisible: !state.keyboardVisible,
           ...transientDefaults,
         })),
+      setTerminalProfile: (terminalProfile) => set({ terminalProfile }),
       setKeyboardLayer: (layer) => set({ keyboardLayer: layer, shiftState: "off" }),
       setShiftState: (shiftState) => set({ shiftState }),
       setCtrlSticky: (ctrlSticky) => set({ ctrlSticky }),
@@ -83,6 +88,7 @@ export const useAppStateStore = create<AppState>()(
       resetAppState: () =>
         set({
           keyboardVisible: true,
+          terminalProfile: "macTerminal",
           settingsOpen: false,
           settingsTab: "general",
           debugOverlayEnabled: false,
@@ -94,6 +100,7 @@ export const useAppStateStore = create<AppState>()(
       name: "kvmPortal.appState",
       partialize: (state) => ({
         keyboardVisible: state.keyboardVisible,
+        terminalProfile: state.terminalProfile,
         debugOverlayEnabled: state.debugOverlayEnabled,
       }),
     },

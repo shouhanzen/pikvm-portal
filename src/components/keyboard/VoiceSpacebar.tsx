@@ -7,11 +7,15 @@ const longPressMs = 430;
 const lockDistancePx = 54;
 
 export function VoiceSpacebar({
+  keyId,
+  active = false,
   status,
   onSpace,
   onStartVoice,
   onStopVoice,
 }: {
+  keyId: string;
+  active?: boolean;
   status: ScribeVoiceStatus;
   onSpace: () => void;
   onStartVoice: () => Promise<void>;
@@ -110,7 +114,8 @@ export function VoiceSpacebar({
   return (
     <button
       type="button"
-      className={`keyboardKey voiceSpacebar ${recording ? "recording" : ""} ${locked ? "locked" : ""}`}
+      className={`keyboardKey voiceSpacebar ${active ? "pressed" : ""} ${recording ? "recording" : ""} ${locked ? "locked" : ""}`}
+      data-key-id={keyId}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
