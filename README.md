@@ -2,6 +2,12 @@
 
 Mobile-first PiKVM portal for controlling a terminal-oriented host from an installed phone PWA.
 
+## Documentation
+
+Install and PWA setup docs are available at:
+
+https://shouhanzen.github.io/pikvm-portal/
+
 ## Install On PiKVM
 
 Run on the PiKVM as root:
