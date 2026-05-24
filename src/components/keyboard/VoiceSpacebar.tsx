@@ -4,6 +4,7 @@ import type { ScribeVoiceStatus } from "../../hooks/useScribeVoice";
 import { useAppStateStore } from "../../stores/appStateStore";
 
 const longPressMs = 430;
+const prepareVoiceMs = 215;
 const lockDistancePx = 54;
 
 export function VoiceSpacebar({
@@ -25,27 +26,49 @@ export function VoiceSpacebar({
   const setVoiceState = useAppStateStore((state) => state.setVoiceState);
   const pointerIdRef = useRef<number | null>(null);
   const startYRef = useRef(0);
+  const prepareTimerRef = useRef<number | null>(null);
   const timerRef = useRef<number | null>(null);
+  const voicePreparingRef = useRef(false);
+  const voicePreparedRef = useRef(false);
   const recordingStartedRef = useRef(false);
 
   const recording = voiceState === "recordingHeld" || voiceState === "recordingLocked" || status === "recording";
   const locked = voiceState === "recordingLocked";
 
   function clearTimer() {
+    if (prepareTimerRef.current) {
+      window.clearTimeout(prepareTimerRef.current);
+      prepareTimerRef.current = null;
+    }
     if (timerRef.current) {
       window.clearTimeout(timerRef.current);
       timerRef.current = null;
     }
   }
 
-  async function startVoice() {
-    recordingStartedRef.current = true;
-    setVoiceState("recordingHeld");
+  async function startVoice(markRecording = true) {
+    if (voicePreparingRef.current || voicePreparedRef.current || recordingStartedRef.current) {
+      if (markRecording) {
+        recordingStartedRef.current = true;
+        setVoiceState("recordingHeld");
+      }
+      return;
+    }
+
+    voicePreparingRef.current = true;
+    if (markRecording) {
+      recordingStartedRef.current = true;
+      setVoiceState("recordingHeld");
+    }
     try {
       await onStartVoice();
+      voicePreparedRef.current = true;
     } catch {
       setVoiceState("idle");
       recordingStartedRef.current = false;
+      voicePreparedRef.current = false;
+    } finally {
+      voicePreparingRef.current = false;
     }
   }
 
@@ -59,9 +82,13 @@ export function VoiceSpacebar({
 
     pointerIdRef.current = event.pointerId;
     startYRef.current = event.clientY;
+    voicePreparedRef.current = false;
     recordingStartedRef.current = false;
     event.currentTarget.setPointerCapture(event.pointerId);
     setVoiceState("pressing");
+    prepareTimerRef.current = window.setTimeout(() => {
+      void startVoice(false);
+    }, prepareVoiceMs);
     timerRef.current = window.setTimeout(() => {
       void startVoice();
     }, longPressMs);
@@ -96,6 +123,11 @@ export function VoiceSpacebar({
       setVoiceState("flushing");
       window.setTimeout(() => setVoiceState("idle"), 1000);
     } else {
+      if (voicePreparingRef.current || voicePreparedRef.current) {
+        onStopVoice();
+        voicePreparingRef.current = false;
+        voicePreparedRef.current = false;
+      }
       setVoiceState("idle");
       onSpace();
     }
@@ -105,9 +137,11 @@ export function VoiceSpacebar({
     event.stopPropagation();
     clearTimer();
     pointerIdRef.current = null;
-    if (recordingStartedRef.current && voiceState !== "recordingLocked") {
+    if ((recordingStartedRef.current || voicePreparingRef.current || voicePreparedRef.current) && voiceState !== "recordingLocked") {
       onStopVoice();
     }
+    voicePreparingRef.current = false;
+    voicePreparedRef.current = false;
     setVoiceState("idle");
   }
 
