@@ -18,6 +18,7 @@ type AppState = {
   settingsOpen: boolean;
   settingsTab: SettingsTab;
   debugOverlayEnabled: boolean;
+  scrollModeEnabled: boolean;
   voiceState: VoiceState;
   setKeyboardVisible: (visible: boolean) => void;
   toggleKeyboardVisible: () => void;
@@ -32,6 +33,7 @@ type AppState = {
   closeSettings: () => void;
   setSettingsTab: (tab: SettingsTab) => void;
   setDebugOverlayEnabled: (enabled: boolean) => void;
+  setScrollModeEnabled: (enabled: boolean) => void;
   setVoiceState: (state: VoiceState) => void;
   resetAppState: () => void;
 };
@@ -53,6 +55,7 @@ export const useAppStateStore = create<AppState>()(
       settingsOpen: false,
       settingsTab: "general",
       debugOverlayEnabled: false,
+      scrollModeEnabled: false,
       ...transientDefaults,
       setKeyboardVisible: (visible) =>
         set({
@@ -80,6 +83,7 @@ export const useAppStateStore = create<AppState>()(
       closeSettings: () => set({ settingsOpen: false, ...transientDefaults }),
       setSettingsTab: (settingsTab) => set({ settingsTab }),
       setDebugOverlayEnabled: (debugOverlayEnabled) => set({ debugOverlayEnabled }),
+      setScrollModeEnabled: (scrollModeEnabled) => set({ scrollModeEnabled }),
       setVoiceState: (voiceState) => set({ voiceState }),
       resetAppState: () =>
         set({
@@ -88,6 +92,7 @@ export const useAppStateStore = create<AppState>()(
           settingsOpen: false,
           settingsTab: "general",
           debugOverlayEnabled: false,
+          scrollModeEnabled: false,
           ...transientDefaults,
         }),
     }),
@@ -97,6 +102,7 @@ export const useAppStateStore = create<AppState>()(
         keyboardVisible: state.keyboardVisible,
         terminalProfile: state.terminalProfile,
         debugOverlayEnabled: state.debugOverlayEnabled,
+        scrollModeEnabled: state.scrollModeEnabled,
       }),
     },
   ),

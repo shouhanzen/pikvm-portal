@@ -1,5 +1,6 @@
 import { PointerEvent, RefObject, useEffect, useRef, useState } from "react";
 import { useKvmInput } from "../app/KvmInputContext";
+import { useAppStateStore } from "../stores/appStateStore";
 import { useViewStateStore } from "../stores/viewStateStore";
 
 type Point = {
@@ -79,7 +80,8 @@ export function useVideoPointerControls(
   const momentumVelocityRef = useRef(0);
   const momentumLastTimeRef = useRef(0);
   const scrollRemainderRef = useRef(0);
-  const [scrollMode, setScrollMode] = useState(false);
+  const scrollMode = useAppStateStore((state) => state.scrollModeEnabled);
+  const setScrollMode = useAppStateStore((state) => state.setScrollModeEnabled);
   const [leftHold, setLeftHoldState] = useState(false);
   const leftHoldRef = useRef(false);
   const [actionWheel, setActionWheel] = useState<ActionWheelState>({
@@ -446,7 +448,7 @@ export function useVideoPointerControls(
 
   function executeAction(action: ActionWheelAction, holdPoint: Point) {
     if (action === "scroll") {
-      setScrollMode((value) => !value);
+      setScrollMode(!useAppStateStore.getState().scrollModeEnabled);
       cancelMomentum();
       return;
     }
