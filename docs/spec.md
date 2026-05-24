@@ -338,7 +338,7 @@ Initial app identity should use a simple `KVM` wordmark.
 
 These items are proven enough to treat as baseline architecture:
 
-- Tailscale is active, MagicDNS resolves `pikvm.tailc004ab.ts.net`, and PiKVM HTTPS presents a trusted Let's Encrypt certificate issued via Tailscale HTTPS.
+- PiKVM is reachable over HTTPS, for example through Tailscale MagicDNS or another trusted hostname.
 - The app is deployed as a PiKVM extra at `/extras/kvm-portal/` using the project `go.sh` harness.
 - The PiKVM-served static app installs and launches from the iPhone home screen.
 - The PWA authenticates directly against `/api/auth/login` and uses the PiKVM browser session cookie.

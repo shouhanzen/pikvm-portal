@@ -14,6 +14,7 @@ Usage:
 Environment:
   Project secrets are read from .env.
   See .env.example for required variables.
+  KVM_PORTAL_SSH_HOST optionally overrides the SSH target. Defaults to the host from PIKVM_URL.
 EOF
 }
 
@@ -31,6 +32,20 @@ load_env() {
     : "${PIKVM_URL:?PIKVM_URL is required in .env}"
     : "${PIKVM_USERNAME:?PIKVM_USERNAME is required in .env}"
     : "${PIKVM_PASSWORD:?PIKVM_PASSWORD is required in .env}"
+}
+
+pikvm_base_url() {
+    printf '%s\n' "${PIKVM_URL%/}"
+}
+
+pikvm_host_from_url() {
+    local url="${PIKVM_URL%/}"
+    local host
+    host="${url#http://}"
+    host="${host#https://}"
+    host="${host%%/*}"
+    host="${host%%:*}"
+    printf '%s\n' "$host"
 }
 
 browser_login() {
@@ -79,8 +94,10 @@ select_source_dir() {
 }
 
 deploy_extension() {
-    local ssh_host="${KVM_PORTAL_SSH_HOST:-kvm-portal-pikvm}"
-    local remote_hostname="${KVM_PORTAL_REMOTE_HOSTNAME:-pikvm.tailc004ab.ts.net}"
+    load_env
+
+    local ssh_host="${KVM_PORTAL_SSH_HOST:-$(pikvm_host_from_url)}"
+    local public_base_url="${KVM_PORTAL_PUBLIC_BASE_URL:-$(pikvm_base_url)}"
     local remote_stage="${KVM_PORTAL_REMOTE_STAGE:-/tmp/kvm-portal-deploy}"
     local remote_web_dir="${KVM_PORTAL_REMOTE_WEB_DIR:-/usr/share/kvmd/web/extras/kvm-portal}"
     local remote_extra_dir="${KVM_PORTAL_REMOTE_EXTRA_DIR:-/usr/share/kvmd/extras/kvm-portal}"
@@ -113,7 +130,6 @@ rm -rf "$REMOTE_WEB_DIR"
 mkdir -p "$REMOTE_WEB_DIR" "$REMOTE_EXTRA_DIR"
 tar -xzf "$REMOTE_STAGE/app.tgz" -C "$REMOTE_WEB_DIR"
 rm -f "$REMOTE_STAGE/app.tgz"
-printf 'ok\n' > "$REMOTE_WEB_DIR/health"
 
 cat > "$REMOTE_EXTRA_DIR/manifest.yaml" <<'MANIFEST'
 name: KVM Portal
@@ -143,8 +159,8 @@ nginx -t -p /etc/kvmd/nginx -c /run/kvmd/nginx.conf -g 'pid /run/kvmd/nginx.pid;
 systemctl restart kvmd-nginx
 EOF
 
-    local health_url="https://$remote_hostname/extras/kvm-portal/health"
-    local app_url="https://$remote_hostname/extras/kvm-portal/"
+    local health_url="$public_base_url/extras/kvm-portal/health"
+    local app_url="$public_base_url/extras/kvm-portal/"
 
     echo "Waiting for $health_url"
     for _ in $(seq 1 40); do
@@ -161,9 +177,11 @@ EOF
 }
 
 deploy_temp() {
-    local ssh_host="${KVM_PORTAL_SSH_HOST:-kvm-portal-pikvm}"
+    load_env
+
+    local ssh_host="${KVM_PORTAL_SSH_HOST:-$(pikvm_host_from_url)}"
     local remote_dir="${KVM_PORTAL_REMOTE_DIR:-/tmp/kvm-portal-app}"
-    local remote_hostname="${KVM_PORTAL_REMOTE_HOSTNAME:-pikvm.tailc004ab.ts.net}"
+    local remote_hostname="${KVM_PORTAL_REMOTE_HOSTNAME:-$(pikvm_host_from_url)}"
     local port="${KVM_PORTAL_PORT:-18080}"
     local source_dir
     source_dir="$(select_source_dir)"
@@ -203,7 +221,9 @@ deploy_temp() {
 }
 
 stop_temp() {
-    local ssh_host="${KVM_PORTAL_SSH_HOST:-kvm-portal-pikvm}"
+    load_env
+
+    local ssh_host="${KVM_PORTAL_SSH_HOST:-$(pikvm_host_from_url)}"
     local remote_dir="${KVM_PORTAL_REMOTE_DIR:-/tmp/kvm-portal-app}"
 
     ssh "$ssh_host" "set -eu; if [ -f '$remote_dir/server.pid' ]; then pid=\$(tr -cd '0-9' < '$remote_dir/server.pid' || true); if [ -n \"\$pid\" ] && kill -0 \"\$pid\" 2>/dev/null; then kill \"\$pid\" || true; echo \"stopped \$pid\"; fi; fi; rm -rf '$remote_dir'"

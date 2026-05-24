@@ -7,7 +7,7 @@ This directory contains project-local SSH scaffolding for deploying KVM Portal s
 Add this to `~/.ssh/config`:
 
 ```sshconfig
-Include /home/hanzen/workspace/pikvm-portal/ops/ssh/pikvm.config.example
+Include /path/to/pikvm-portal/ops/ssh/pikvm.config.example
 ```
 
 Then edit `ops/ssh/pikvm.config.example` or copy it to a private file and include that instead.
@@ -16,6 +16,7 @@ Then edit `ops/ssh/pikvm.config.example` or copy it to a private file and includ
 
 Copy the `Host kvm-portal-pikvm` block from `pikvm.config.example` into `~/.ssh/config`, then update:
 
+- `HostName`
 - `User`
 - `IdentityFile`
 - Any host key policy you prefer
@@ -28,4 +29,4 @@ After configuring the key, test:
 ssh kvm-portal-pikvm
 ```
 
-Future deploy scripts should target the `kvm-portal-pikvm` host alias rather than hardcoding the PiKVM address.
+Deploy scripts default to the host from `PIKVM_URL`. Set `KVM_PORTAL_SSH_HOST=kvm-portal-pikvm` if you prefer to deploy through this SSH alias.

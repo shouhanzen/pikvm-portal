@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "package:release": "npm run build && tar -C dist -czf kvm-portal-dist.tar.gz .",
     "preview": "vite preview"
   },
   "dependencies": {
