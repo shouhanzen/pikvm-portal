@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 
 export type KeyboardLayer = "alpha" | "numbers" | "symbols";
 export type ShiftState = "off" | "oneShot" | "locked";
-export type SettingsTab = "general" | "view" | "inputs" | "secrets";
+export type SettingsTab = "general" | "view" | "inputs" | "debug" | "secrets";
 export type TerminalProfile = "macTerminal" | "tmux";
 export type VoiceState = "idle" | "pressing" | "recordingHeld" | "recordingLocked" | "flushing";
 
@@ -18,7 +18,6 @@ type AppState = {
   settingsOpen: boolean;
   settingsTab: SettingsTab;
   debugOverlayEnabled: boolean;
-  debugLogOpen: boolean;
   voiceState: VoiceState;
   setKeyboardVisible: (visible: boolean) => void;
   toggleKeyboardVisible: () => void;
@@ -33,7 +32,6 @@ type AppState = {
   closeSettings: () => void;
   setSettingsTab: (tab: SettingsTab) => void;
   setDebugOverlayEnabled: (enabled: boolean) => void;
-  setDebugLogOpen: (open: boolean) => void;
   setVoiceState: (state: VoiceState) => void;
   resetAppState: () => void;
 };
@@ -55,7 +53,6 @@ export const useAppStateStore = create<AppState>()(
       settingsOpen: false,
       settingsTab: "general",
       debugOverlayEnabled: false,
-      debugLogOpen: false,
       ...transientDefaults,
       setKeyboardVisible: (visible) =>
         set({
@@ -83,7 +80,6 @@ export const useAppStateStore = create<AppState>()(
       closeSettings: () => set({ settingsOpen: false, ...transientDefaults }),
       setSettingsTab: (settingsTab) => set({ settingsTab }),
       setDebugOverlayEnabled: (debugOverlayEnabled) => set({ debugOverlayEnabled }),
-      setDebugLogOpen: (debugLogOpen) => set({ debugLogOpen }),
       setVoiceState: (voiceState) => set({ voiceState }),
       resetAppState: () =>
         set({
@@ -92,7 +88,6 @@ export const useAppStateStore = create<AppState>()(
           settingsOpen: false,
           settingsTab: "general",
           debugOverlayEnabled: false,
-          debugLogOpen: false,
           ...transientDefaults,
         }),
     }),

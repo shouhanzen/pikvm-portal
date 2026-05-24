@@ -4,7 +4,7 @@ set -euo pipefail
 usage() {
     cat <<'EOF'
 Usage:
-  ./go.sh                         Deploy KVM Portal to the PiKVM extra path.
+  ./go.sh                         Build and deploy KVM Portal to the PiKVM extra path.
   ./go.sh --deploy                Same as default.
   ./go.sh --bootstrap-agent-browser
                                   Open KVM Portal and log in through its auth UI.
@@ -93,8 +93,15 @@ select_source_dir() {
     fi
 }
 
+build_app() {
+    echo "Building app"
+    npm run build
+}
+
 deploy_extension() {
     load_env
+
+    build_app
 
     local ssh_host="${KVM_PORTAL_SSH_HOST:-$(pikvm_host_from_url)}"
     local public_base_url="${KVM_PORTAL_PUBLIC_BASE_URL:-$(pikvm_base_url)}"

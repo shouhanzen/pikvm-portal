@@ -12,6 +12,7 @@ const tabs: Array<{ id: SettingsTab; label: string }> = [
   { id: "general", label: "General" },
   { id: "view", label: "View" },
   { id: "inputs", label: "Inputs" },
+  { id: "debug", label: "Debug" },
   { id: "secrets", label: "Secrets" },
 ];
 
@@ -19,12 +20,10 @@ export function SettingsModal({ onLogout }: { onLogout: () => void }) {
   const settingsOpen = useAppStateStore((state) => state.settingsOpen);
   const settingsTab = useAppStateStore((state) => state.settingsTab);
   const debugOverlayEnabled = useAppStateStore((state) => state.debugOverlayEnabled);
-  const debugLogOpen = useAppStateStore((state) => state.debugLogOpen);
   const terminalProfile = useAppStateStore((state) => state.terminalProfile);
   const closeSettings = useAppStateStore((state) => state.closeSettings);
   const setSettingsTab = useAppStateStore((state) => state.setSettingsTab);
   const setDebugOverlayEnabled = useAppStateStore((state) => state.setDebugOverlayEnabled);
-  const setDebugLogOpen = useAppStateStore((state) => state.setDebugLogOpen);
   const setTerminalProfile = useAppStateStore((state) => state.setTerminalProfile);
   const resetAppState = useAppStateStore((state) => state.resetAppState);
   const resetView = useViewStateStore((state) => state.resetView);
@@ -100,27 +99,6 @@ export function SettingsModal({ onLogout }: { onLogout: () => void }) {
                 <option value="tmux">tmux</option>
               </select>
             </label>
-            <label className="settingsRow switchRow">
-              <span>
-                <strong>Debug video overlay</strong>
-                <small>Show stream state and view intent on top of video.</small>
-              </span>
-              <input
-                type="checkbox"
-                checked={debugOverlayEnabled}
-                onChange={(event) => setDebugOverlayEnabled(event.target.checked)}
-              />
-            </label>
-            <div className="settingsRow">
-              <span>
-                <strong>Debug logs</strong>
-                <small>Open the in-app log panel.</small>
-              </span>
-              <button type="button" onClick={() => setDebugLogOpen(!debugLogOpen)}>
-                {debugLogOpen ? "Hide" : "Show"}
-              </button>
-            </div>
-            {debugLogOpen ? <DebugLogPanel /> : null}
             <div className="settingsRow">
               <span>
                 <strong>Reset view</strong>
@@ -156,6 +134,20 @@ export function SettingsModal({ onLogout }: { onLogout: () => void }) {
           <div className="emptySettingsTab">
             <h3>Input tuning later</h3>
             <p>Mouse sensitivity and scroll controls will land with the mouse/view gesture pass.</p>
+          </div>
+        ) : null}
+
+        {settingsTab === "debug" ? (
+          <div className="debugSettingsTab">
+            <label className="settingsRow switchRow debugToggleRow">
+              <strong>Debug video overlay</strong>
+              <input
+                type="checkbox"
+                checked={debugOverlayEnabled}
+                onChange={(event) => setDebugOverlayEnabled(event.target.checked)}
+              />
+            </label>
+            <DebugLogPanel />
           </div>
         ) : null}
 

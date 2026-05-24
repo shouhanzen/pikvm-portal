@@ -746,7 +746,7 @@ select {
 
 .settingsTabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 6px;
   padding: 4px;
   border-radius: 14px;
@@ -786,6 +786,12 @@ select {
 .settingsRow button,
 .buttonCluster button {
   min-height: 36px;
+}
+
+.settingsRow button:disabled,
+.buttonCluster button:disabled {
+  color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .terminalProfileRow select {
@@ -917,11 +923,49 @@ select {
 }
 
 .dangerZone,
-.debugLogPanel,
 .emptySettingsTab {
   padding: 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.08);
+}
+
+.debugSettingsTab {
+  display: grid;
+  gap: 14px;
+}
+
+.debugToggleRow {
+  display: flex !important;
+  min-height: 48px;
+}
+
+.debugToggleRow strong {
+  font-size: 15px;
+}
+
+.debugLogPanel {
+  display: grid;
+  gap: 8px;
+  width: calc(100% + 28px);
+  margin-inline: -14px;
+}
+
+.debugLogHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-inline: 14px;
+}
+
+.debugLogHeader h3 {
+  margin: 0;
+}
+
+.debugLogHeader small {
+  margin-right: auto;
+  color: rgba(255, 255, 255, 0.48);
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
 }
 
 .dangerZone button {
@@ -932,30 +976,92 @@ select {
 
 .logList {
   display: grid;
-  gap: 8px;
-  max-height: 260px;
+  gap: 1px;
+  max-height: min(62dvh, 560px);
   overflow-y: auto;
+  background: rgba(0, 0, 0, 0.34);
+  font-family: "SF Mono", Menlo, Consolas, monospace;
 }
 
 .logEntry {
-  display: grid;
-  gap: 2px;
-  padding: 10px;
-  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 8px;
+  padding: 6px 8px;
   background: rgba(0, 0, 0, 0.25);
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.35;
+  min-width: 0;
 }
 
 .logEntry span {
+  flex: 0 0 auto;
   color: rgba(255, 255, 255, 0.48);
 }
 
+.logEntry b {
+  flex: 0 0 auto;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.logEntry strong {
+  flex: 0 1 auto;
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
 .logEntry p {
+  flex: 1 1 150px;
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .logEntry.error {
   color: #ff8a80;
+}
+
+.logEntry.warn {
+  color: #ffd60a;
+}
+
+.logEntry.info {
+  color: #64d2ff;
+}
+
+.logEntry.debug {
+  color: #bf9bff;
+}
+
+.logEntry.trace {
+  color: rgba(255, 255, 255, 0.46);
+}
+
+.logFilterBar {
+  display: flex;
+  gap: 6px;
+  padding: 0 14px 2px;
+  overflow-x: auto;
+}
+
+.logFilterBar button {
+  min-height: 30px;
+  border-radius: 999px;
+  padding: 0 10px;
+  color: rgba(255, 255, 255, 0.68);
+  background: rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.logFilterBar button.active {
+  color: #050507;
+  background: #f7f7f8;
 }
 
 .emptyState {

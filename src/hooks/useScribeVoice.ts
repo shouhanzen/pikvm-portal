@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import type { RealtimeConnection } from "@elevenlabs/client";
 import { mintScribeToken } from "../services/scribeClient";
 import { startAppOwnedScribeMicrophoneCapture, stopActiveScribeMicrophoneCapture } from "../services/scribeMicrophone";
-import { logDebug, logError } from "../stores/debugLogStore";
+import { logError, logInfo } from "../stores/debugLogStore";
 import { useLocalSecretsStore } from "../stores/localSecretsStore";
 
 export type ScribeVoiceStatus = "idle" | "connecting" | "recording" | "flushing" | "error";
@@ -79,7 +79,7 @@ export function useScribeVoice(onCommittedText: (text: string) => void) {
               return;
             }
             setStatus("recording");
-            logDebug("scribe", "Scribe voice session opened with app-owned microphone capture.");
+            logInfo("scribe", "Scribe voice session opened with app-owned microphone capture.");
           })
           .catch((captureError) => {
             if (captureAbort.signal.aborted || connectionRef.current !== connection) {
@@ -96,7 +96,7 @@ export function useScribeVoice(onCommittedText: (text: string) => void) {
         }
         if (data.text) {
           onCommittedText(data.text);
-          logDebug("scribe", `Committed transcript: ${data.text}`);
+          logInfo("scribe", `Committed transcript: ${data.text}`);
         }
       });
       connection.on(RealtimeEvents.ERROR, (data) => {
@@ -105,7 +105,7 @@ export function useScribeVoice(onCommittedText: (text: string) => void) {
         }
         setStatus("error");
         setError(data.error);
-        logDebug("scribe", data.error);
+        logInfo("scribe", data.error);
       });
       connection.on(RealtimeEvents.AUTH_ERROR, (data) => {
         if (connectionRef.current !== connection) {
@@ -113,7 +113,7 @@ export function useScribeVoice(onCommittedText: (text: string) => void) {
         }
         setStatus("error");
         setError(data.error);
-        logDebug("scribe", data.error);
+        logInfo("scribe", data.error);
       });
       connection.on(RealtimeEvents.CLOSE, () => {
         if (connectionRef.current === connection) {

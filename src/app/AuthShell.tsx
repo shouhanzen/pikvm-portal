@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { checkAuth, login } from "../services/pikvmHttpApi";
-import { logDebug, logError } from "../stores/debugLogStore";
+import { logError, logInfo } from "../stores/debugLogStore";
 import { useLocalSecretsStore } from "../stores/localSecretsStore";
 import { ControlShell } from "./ControlShell";
 
@@ -23,7 +23,7 @@ export function AuthShell() {
     try {
       const ok = await checkAuth();
       setAuthState(ok ? "authenticated" : "anonymous");
-      logDebug("auth", ok ? "Auth cookie valid." : "Auth required.");
+      logInfo("auth", ok ? "Auth cookie valid." : "Auth required.");
     } catch (authError) {
       setError(authError instanceof Error ? authError.message : String(authError));
       setAuthState("unavailable");

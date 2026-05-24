@@ -1,0 +1,11 @@
+---
+description: Build and deploy workflow for this PiKVM portal
+alwaysApply: true
+---
+
+# Build And Deploy
+
+- When asked to compile, build, deploy, or verify source-code changes on the PiKVM, run `./go.sh`.
+- `./go.sh` is the canonical path: it runs the frontend build and deploys the resulting bundle to the PiKVM extra path.
+- Do not run `npm run build` as the final verification for deployed app changes unless the user only wants a local build.
+- Use `./go.sh --deploy` only when an explicit deploy subcommand is clearer; it is equivalent to `./go.sh`.

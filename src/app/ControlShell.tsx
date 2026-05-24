@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { logout, printText, setMouseOutput } from "../services/pikvmHttpApi";
 import { PiKvmSocket, type PiKvmSocketStatus } from "../services/pikvmSocket";
-import { logDebug, logError } from "../stores/debugLogStore";
+import { logError, logInfo } from "../stores/debugLogStore";
 import { useAppStateStore, type TerminalProfile } from "../stores/appStateStore";
 import type { TerminalAction } from "../types/hid";
 import { KvmInputContext, type KvmInput } from "./KvmInputContext";
@@ -47,17 +47,17 @@ export function ControlShell({ onLoggedOut }: { onLoggedOut: () => void }) {
 
       intentionalCloseRef.current = false;
       clearReconnect();
-      logDebug("ws", `Opening state socket: ${reason}.`);
+      logInfo("ws", `Opening state socket: ${reason}.`);
       const socket = new PiKvmSocket({
         onStatus: (status) => {
           setSocketStatus(status);
-          logDebug("ws", `State socket ${status}.`);
+          logInfo("ws", `State socket ${status}.`);
           if (status === "closed" && !intentionalCloseRef.current && !document.hidden) {
             clearReconnect();
             reconnectTimerRef.current = window.setTimeout(() => connectSocket("visible close retry"), 1000);
           }
         },
-        onError: (message) => logDebug("ws", message),
+        onError: (message) => logInfo("ws", message),
       });
       socketRef.current = socket;
       socket.connect();
@@ -66,7 +66,7 @@ export function ControlShell({ onLoggedOut }: { onLoggedOut: () => void }) {
     function closeSocket(reason = "close") {
       clearReconnect();
       intentionalCloseRef.current = true;
-      logDebug("ws", `Closing state socket: ${reason}.`);
+      logInfo("ws", `Closing state socket: ${reason}.`);
       socketRef.current?.close();
       socketRef.current = null;
       setSocketStatus("closed");

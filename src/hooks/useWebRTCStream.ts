@@ -1,6 +1,6 @@
 import { RefObject, useEffect, useRef, useState } from "react";
 import { startJanusWebRtcStream, type StartedJanusStream } from "../services/janusWebRtc";
-import { logDebug, logError } from "../stores/debugLogStore";
+import { logError, logInfo } from "../stores/debugLogStore";
 
 export type WebRTCStatus = "idle" | "connecting" | "rendering" | "paused" | "error";
 
@@ -64,7 +64,7 @@ export function useWebRTCStream(videoRef: RefObject<HTMLVideoElement | null>) {
       try {
         const nextStream = await startJanusWebRtcStream(video, (message) => {
           setDetail(message);
-          logDebug("webrtc", message);
+          logInfo("webrtc", message);
         }, abortController.signal);
         if (token !== startToken || document.hidden) {
           nextStream.stop();
@@ -78,7 +78,7 @@ export function useWebRTCStream(videoRef: RefObject<HTMLVideoElement | null>) {
         }
 
         if (error instanceof DOMException && error.name === "AbortError") {
-          logDebug("webrtc", "WebRTC startup aborted.");
+          logInfo("webrtc", "WebRTC startup aborted.");
           return;
         }
 
@@ -106,7 +106,7 @@ export function useWebRTCStream(videoRef: RefObject<HTMLVideoElement | null>) {
 
     function onPageHide() {
       stopStream("paused", "Paused while the app is in the background.");
-      logDebug("webrtc", "Page hidden; WebRTC stopped.");
+      logInfo("webrtc", "Page hidden; WebRTC stopped.");
     }
 
     function onPageShow() {
@@ -118,7 +118,7 @@ export function useWebRTCStream(videoRef: RefObject<HTMLVideoElement | null>) {
     function onVisibilityChange() {
       if (document.hidden) {
         stopStream("paused", "Paused while the app is in the background.");
-        logDebug("webrtc", "Document hidden; WebRTC stopped.");
+        logInfo("webrtc", "Document hidden; WebRTC stopped.");
       } else if (statusRef.current !== "rendering") {
         void start("Restoring WebRTC after foreground...");
       }
