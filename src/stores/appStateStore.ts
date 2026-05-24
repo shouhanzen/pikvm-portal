@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 
 export type KeyboardLayer = "alpha" | "numbers" | "symbols";
 export type ShiftState = "off" | "oneShot" | "locked";
-export type SettingsTab = "general" | "inputs" | "secrets";
+export type SettingsTab = "general" | "view" | "inputs" | "secrets";
 export type TerminalProfile = "macTerminal" | "tmux";
 export type VoiceState = "idle" | "pressing" | "recordingHeld" | "recordingLocked" | "flushing";
 

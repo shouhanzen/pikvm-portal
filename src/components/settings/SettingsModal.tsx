@@ -3,11 +3,14 @@ import { useAppStateStore, type SettingsTab, type TerminalProfile } from "../../
 import { useDebugLogStore } from "../../stores/debugLogStore";
 import { useInputPrefsStore } from "../../stores/inputPrefsStore";
 import { useLocalSecretsStore } from "../../stores/localSecretsStore";
+import { useViewPresetStore } from "../../stores/viewPresetStore";
 import { useViewStateStore } from "../../stores/viewStateStore";
 import { DebugLogPanel } from "./DebugLogPanel";
+import { ViewPresetsPanel } from "./ViewPresetsPanel";
 
 const tabs: Array<{ id: SettingsTab; label: string }> = [
   { id: "general", label: "General" },
+  { id: "view", label: "View" },
   { id: "inputs", label: "Inputs" },
   { id: "secrets", label: "Secrets" },
 ];
@@ -25,6 +28,7 @@ export function SettingsModal({ onLogout }: { onLogout: () => void }) {
   const setTerminalProfile = useAppStateStore((state) => state.setTerminalProfile);
   const resetAppState = useAppStateStore((state) => state.resetAppState);
   const resetView = useViewStateStore((state) => state.resetView);
+  const resetViewPresets = useViewPresetStore((state) => state.resetViewPresets);
   const resetInputPrefs = useInputPrefsStore((state) => state.resetInputPrefs);
   const clearLogs = useDebugLogStore((state) => state.clearLogs);
   const pikvmUsername = useLocalSecretsStore((state) => state.pikvmUsername);
@@ -50,6 +54,7 @@ export function SettingsModal({ onLogout }: { onLogout: () => void }) {
   function resetAll() {
     resetAppState();
     resetView();
+    resetViewPresets();
     resetInputPrefs();
     resetLocalSecrets();
     clearLogs();
@@ -144,6 +149,8 @@ export function SettingsModal({ onLogout }: { onLogout: () => void }) {
             </section>
           </div>
         ) : null}
+
+        {settingsTab === "view" ? <ViewPresetsPanel /> : null}
 
         {settingsTab === "inputs" ? (
           <div className="emptySettingsTab">

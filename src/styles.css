@@ -336,12 +336,73 @@ select {
 }
 
 .controlBar {
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr);
 }
 
 .bottomUtilityRow {
   grid-template-columns: repeat(9, 1fr);
   padding: 0 2px;
+}
+
+.presetSelector {
+  position: relative;
+  min-width: 0;
+}
+
+.presetSelector > .iconButton {
+  width: 100%;
+}
+
+.presetSelectorPopover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 8;
+  display: grid;
+  gap: 7px;
+  width: min(210px, 74vw);
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(20, 20, 24, 0.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 12px 28px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(18px);
+}
+
+.presetSelectorItem {
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  border-radius: 12px;
+  padding: 0 10px;
+  color: #fff;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.presetSelectorItem span {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--preset-color);
+  box-shadow: 0 0 14px var(--preset-color);
+}
+
+.presetSelectorEmpty {
+  display: grid;
+  gap: 8px;
+  padding: 6px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.presetSelectorEmpty button {
+  min-height: 34px;
+  border-radius: 11px;
+  color: #06120a;
+  background: #34c759;
 }
 
 .iconButton,
@@ -460,6 +521,14 @@ select {
 .keyboardKey.wide-enter {
   font-size: 14px;
   background: linear-gradient(#b8bcc4, #969aa4);
+}
+
+.keyboardKey.wide-shift.pressed,
+.keyboardKey.wide-backspace.pressed,
+.keyboardKey.wide-utility.pressed,
+.keyboardKey.wide-enter.pressed {
+  color: #fff;
+  background: #4b8dff;
 }
 
 .keyboardKey.wide-space,
@@ -677,7 +746,7 @@ select {
 
 .settingsTabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   padding: 4px;
   border-radius: 14px;
@@ -721,6 +790,125 @@ select {
 
 .terminalProfileRow select {
   max-width: 150px;
+}
+
+.presetCreateForm {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.presetCreateForm button {
+  min-height: 38px;
+  border-radius: 13px;
+  color: #06120a;
+  background: #34c759;
+}
+
+.presetCreateForm button:disabled {
+  color: rgba(255, 255, 255, 0.44);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.presetList {
+  display: grid;
+  gap: 10px;
+}
+
+.presetRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 58px;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.presetRow::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2px;
+  background: var(--preset-color);
+}
+
+.presetRow.dragging {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.presetDragBody {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  touch-action: none;
+}
+
+.presetDragBody span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.presetRow button {
+  min-height: 34px;
+  border-radius: 11px;
+  padding: 0 10px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.presetDeleteButton {
+  width: 34px;
+  padding: 0 !important;
+  color: #ff8a80 !important;
+}
+
+.presetMap {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.presetMapPlane {
+  position: relative;
+  height: 150px;
+  border-radius: 14px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    radial-gradient(circle at 50% 100%, rgba(100, 210, 255, 0.18), transparent 52%),
+    rgba(0, 0, 0, 0.34);
+  background-size: 25% 25%, 25% 25%, auto, auto;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.presetMapDot {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.presetMapDot i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--preset-color);
+  box-shadow: 0 0 14px var(--preset-color);
 }
 
 .buttonCluster {

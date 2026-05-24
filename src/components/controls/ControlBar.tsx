@@ -2,6 +2,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Keyboard, Plus, Sett
 import { useKvmInput } from "../../app/KvmInputContext";
 import { useAppStateStore } from "../../stores/appStateStore";
 import { ControlButton } from "./ControlButton";
+import { PresetSelector } from "./PresetSelector";
 
 export function ControlBar() {
   const input = useKvmInput();
@@ -26,6 +27,7 @@ export function ControlBar() {
       <ControlButton label="Close tab" onPress={() => void input.sendTerminalAction("closeTab")}>
         <X size={21} />
       </ControlButton>
+      <PresetSelector />
       <ControlButton
         label={keyboardVisible ? "Hide keyboard" : "Show keyboard"}
         onPress={toggleKeyboardVisible}

@@ -7,6 +7,9 @@ import { KeyboardKey } from "./KeyboardKey";
 import { alphaRows, numberRows, symbolRows, type KeyboardKeySpec } from "./keyboardLayout";
 import { VoiceSpacebar } from "./VoiceSpacebar";
 
+const backspaceRepeatDelayMs = 450;
+const backspaceRepeatIntervalMs = 70;
+
 export function CustomKeyboard() {
   const input = useKvmInput();
   const keyboardLayer = useAppStateStore((state) => state.keyboardLayer);
@@ -24,7 +27,12 @@ export function CustomKeyboard() {
   const [lastShiftTap, setLastShiftTap] = useState(0);
   const [activeKeyId, setActiveKeyId] = useState<string | null>(null);
   const activePointerIdRef = useRef<number | null>(null);
+  const activeKeyIdRef = useRef<string | null>(null);
+  const initialKeyIdRef = useRef<string | null>(null);
   const keyboardGestureCancelledRef = useRef(false);
+  const backspaceRepeatDelayRef = useRef<number | null>(null);
+  const backspaceRepeatIntervalRef = useRef<number | null>(null);
+  const backspaceRepeatStartedRef = useRef(false);
   const scribe = useScribeVoice((text) => void input.sendText(text));
   const rows = keyboardLayer === "alpha" ? alphaRows : keyboardLayer === "numbers" ? numberRows : symbolRows;
   const keyById = useMemo(() => new Map(rows.flat().map((key) => [key.id, key])), [rows]);
@@ -114,13 +122,17 @@ export function CustomKeyboard() {
 
     event.preventDefault();
     activePointerIdRef.current = event.pointerId;
+    initialKeyIdRef.current = keyId;
     keyboardGestureCancelledRef.current = false;
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
     } catch {
       // Synthetic events and some browser edge cases may not allow pointer capture.
     }
-    setActiveKeyId(keyId);
+    setActiveKey(keyId);
+    if (keyId === "backspace") {
+      startBackspaceRepeat();
+    }
   }
 
   function onKeyboardPointerMove(event: PointerEvent<HTMLElement>) {
@@ -129,9 +141,13 @@ export function CustomKeyboard() {
     }
 
     event.preventDefault();
+    if (initialKeyIdRef.current === "backspace") {
+      return;
+    }
+
     if (isAboveKeyboardCancelZone(event.currentTarget, event.clientY)) {
       keyboardGestureCancelledRef.current = true;
-      setActiveKeyId(null);
+      setActiveKey(null);
       return;
     }
     if (keyboardGestureCancelledRef.current) {
@@ -140,7 +156,10 @@ export function CustomKeyboard() {
 
     const keyId = resolveKeyId(event.currentTarget, event.clientX, event.clientY);
     if (keyId && keyById.has(keyId)) {
-      setActiveKeyId(keyId);
+      if (keyId === "backspace" && initialKeyIdRef.current !== "backspace") {
+        return;
+      }
+      setActiveKey(keyId);
     }
   }
 
@@ -150,15 +169,21 @@ export function CustomKeyboard() {
     }
 
     event.preventDefault();
-    const keyId = keyboardGestureCancelledRef.current
+    const isBackspaceGesture = initialKeyIdRef.current === "backspace";
+    const keyId = isBackspaceGesture
+      ? "backspace"
+      : keyboardGestureCancelledRef.current
       ? null
       : resolveKeyId(event.currentTarget, event.clientX, event.clientY);
-    const key = keyboardGestureCancelledRef.current
+    const resolvedKeyId = keyId === "backspace" && !isBackspaceGesture ? activeKeyIdRef.current : keyId;
+    const key = isBackspaceGesture && backspaceRepeatStartedRef.current
       ? null
-      : keyId
-        ? keyById.get(keyId)
-        : activeKeyId
-          ? keyById.get(activeKeyId)
+      : keyboardGestureCancelledRef.current
+      ? null
+      : resolvedKeyId
+        ? keyById.get(resolvedKeyId)
+        : activeKeyIdRef.current
+          ? keyById.get(activeKeyIdRef.current)
           : null;
     clearActivePointer(event);
     if (key) {
@@ -168,11 +193,13 @@ export function CustomKeyboard() {
 
   function onKeyboardPointerCancel(event: PointerEvent<HTMLElement>) {
     if (event.pointerId === activePointerIdRef.current) {
+      stopBackspaceRepeat();
       clearActivePointer(event);
     }
   }
 
   function clearActivePointer(event: PointerEvent<HTMLElement>) {
+    stopBackspaceRepeat();
     try {
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
         event.currentTarget.releasePointerCapture(event.pointerId);
@@ -181,8 +208,40 @@ export function CustomKeyboard() {
       // Best effort; capture may not exist for synthetic/cancelled pointers.
     }
     activePointerIdRef.current = null;
+    activeKeyIdRef.current = null;
+    initialKeyIdRef.current = null;
     keyboardGestureCancelledRef.current = false;
     setActiveKeyId(null);
+  }
+
+  function setActiveKey(keyId: string | null) {
+    activeKeyIdRef.current = keyId;
+    setActiveKeyId(keyId);
+  }
+
+  function startBackspaceRepeat() {
+    stopBackspaceRepeat();
+    backspaceRepeatStartedRef.current = false;
+    backspaceRepeatDelayRef.current = window.setTimeout(() => {
+      backspaceRepeatStartedRef.current = true;
+      void input.sendKey("Backspace");
+      backspaceRepeatIntervalRef.current = window.setInterval(() => {
+        if (activePointerIdRef.current !== null && initialKeyIdRef.current === "backspace") {
+          void input.sendKey("Backspace");
+        }
+      }, backspaceRepeatIntervalMs);
+    }, backspaceRepeatDelayMs);
+  }
+
+  function stopBackspaceRepeat() {
+    if (backspaceRepeatDelayRef.current !== null) {
+      window.clearTimeout(backspaceRepeatDelayRef.current);
+      backspaceRepeatDelayRef.current = null;
+    }
+    if (backspaceRepeatIntervalRef.current !== null) {
+      window.clearInterval(backspaceRepeatIntervalRef.current);
+      backspaceRepeatIntervalRef.current = null;
+    }
   }
 
   return (
