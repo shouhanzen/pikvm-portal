@@ -6,7 +6,7 @@ Mobile-first PiKVM portal for controlling a terminal-oriented host from an insta
 
 Install and PWA setup docs are available at:
 
-https://shouhanzen.github.io/pikvm-portal/
+http://shouh.me/pikvm-portal/
 
 ## Install On PiKVM
 
